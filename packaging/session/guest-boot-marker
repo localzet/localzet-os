@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Emit a guest-side signal after the compositor launches the autostart hook.
+# This is a smoke-test marker, not an attestation or a security guarantee.
+set -euo pipefail
+[[ -n "${WAYLAND_DISPLAY:-}" ]] || exit 0
+[[ -e /dev/ttyS0 && -w /dev/ttyS0 ]] || exit 0
+printf 'LOCALZET_GUI_SESSION_READY_V1\n' > /dev/ttyS0
