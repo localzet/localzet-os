@@ -1,0 +1,9 @@
+[package]
+name = "localzet-panel"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+gtk = { package = "gtk4", version = "0.9" }
+gtk4-layer-shell = "0.4"
