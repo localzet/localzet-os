@@ -14,7 +14,7 @@ lb config --distribution trixie --architectures amd64 --binary-images iso-hybrid
 mkdir -p config/package-lists config/includes.chroot/opt/localzet-os config/hooks/live
 cat > config/package-lists/localzet.list.chroot <<'PACKAGES'
 linux-image-amd64 live-boot live-config systemd-sysv
-labwc foot swaybg lightdm xwayland thunar waybar
+labwc foot swaybg lightdm xwayland thunar waybar wofi
 network-manager network-manager-gnome dbus-user-session dbus-x11
 pipewire pipewire-pulse wireplumber pavucontrol
 policykit-1-gnome fonts-dejavu-core fonts-noto-core
@@ -22,7 +22,7 @@ xserver-xorg-input-libinput mesa-utils firmware-linux-free
 sudo curl ca-certificates bash git xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk
 build-essential pkg-config libgtk-4-dev libgtk4-layer-shell-dev rustc cargo
 PACKAGES
-rsync -a --exclude out --exclude target --exclude .git "$ROOT/" config/includes.chroot/opt/localzet-os/
+rsync -a --exclude out --exclude target --exclude .git --exclude __pycache__ --exclude "*.pyc" "$ROOT/" config/includes.chroot/opt/localzet-os/
 cat > config/hooks/live/0500-localzet.hook.chroot <<'HOOK'
 #!/bin/bash
 set -euo pipefail
@@ -51,6 +51,13 @@ HOOK
 chmod +x config/hooks/live/0500-localzet.hook.chroot
 printf 'Building Debian Trixie based Localzet Live ISO in %s\n' "$OUT"
 sudo lb build
+shopt -s nullglob
+images=("$OUT"/*.iso)
+if (( ${#images[@]} != 1 )); then
+  echo "Expected exactly one ISO; found ${#images[@]}" >&2
+  exit 1
+fi
+[[ -s "${images[0]}" ]] || { echo "ISO is empty" >&2; exit 1; }
 find "$OUT" -maxdepth 1 -name '*.iso' -print -exec sha256sum {} \;
 ( cd "$OUT" && sha256sum ./*.iso > SHA256SUMS )
 printf 'Checksums written to %s/SHA256SUMS\n' "$OUT"
