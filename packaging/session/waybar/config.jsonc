@@ -1,0 +1,18 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 38,
+  "modules-left": ["custom/launcher", "wlr/taskbar"],
+  "modules-center": ["clock"],
+  "modules-right": ["pulseaudio", "network", "battery", "tray"],
+  "custom/launcher": {
+    "format": "◆ Localzet",
+    "on-click": "wofi --show drun",
+    "tooltip": false
+  },
+  "clock": {"format": "{:%a %d %b  %H:%M}"},
+  "network": {"format-wifi": "Wi-Fi {signalStrength}%", "format-ethernet": "Ethernet", "format-disconnected": "Offline"},
+  "battery": {"format": "Battery {capacity}%"},
+  "pulseaudio": {"format": "Volume {volume}%", "format-muted": "Muted"},
+  "wlr/taskbar": {"on-click": "activate", "on-click-middle": "close"}
+}
