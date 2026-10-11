@@ -1,4 +1,4 @@
-name: Проверки
+name: CI
 on:
   push:
     branches: [main]
@@ -7,25 +7,33 @@ on:
 permissions:
   contents: read
 jobs:
-  validation:
+  source:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Проверка состава репозитория
-        run: |
-          test -f README.md
-          test -f LICENSE
-          if test -f Cargo.toml; then
-            sudo apt-get update
-            sudo apt-get install -y libgtk-4-dev libgtk4-layer-shell-dev pkg-config
-            rustup component add rustfmt clippy
-            cargo fmt --all -- --check
-            cargo check --workspace
-            cargo test --workspace
-            cargo clippy --workspace --all-targets -- -D warnings
-          fi
-      - name: Проверка Bash
-        run: |
-          if test -d scripts; then
-            find scripts tests -type f -name '*.sh' -print0 | xargs -0 -r -n1 bash -n
-          fi
+      - name: Проверка полноты исходников
+        run: bash scripts/check-source-tree.sh
+      - name: Bash syntax
+        run: find scripts tests -type f -name '*.sh' -print0 | xargs -0 -r -n1 bash -n
+      - name: Python tests
+        run: python3 -m unittest discover -s tests -p 'test_*.py'
+  rust:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Source gate
+        run: bash scripts/check-source-tree.sh
+      - name: GTK dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libgtk4-layer-shell-dev pkg-config
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Check
+        run: cargo check --workspace
+      - name: Test
+        run: cargo test --workspace
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
