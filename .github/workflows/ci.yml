@@ -1,0 +1,31 @@
+name: Проверки
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validation:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Проверка состава репозитория
+        run: |
+          test -f README.md
+          test -f LICENSE
+          if test -f Cargo.toml; then
+            sudo apt-get update
+            sudo apt-get install -y libgtk-4-dev libgtk4-layer-shell-dev pkg-config
+            rustup component add rustfmt clippy
+            cargo fmt --all -- --check
+            cargo check --workspace
+            cargo test --workspace
+            cargo clippy --workspace --all-targets -- -D warnings
+          fi
+      - name: Проверка Bash
+        run: |
+          if test -d scripts; then
+            find scripts tests -type f -name '*.sh' -print0 | xargs -0 -r -n1 bash -n
+          fi
