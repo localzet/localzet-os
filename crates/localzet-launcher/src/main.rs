@@ -36,7 +36,7 @@ fn main() {
         window.set_anchor(Edge::Top, true);
         window.set_margin(Edge::Top, 64);
         window.set_keyboard_mode(KeyboardMode::Exclusive);
-        window.set_namespace(Some("localzet-launcher"));
+        window.set_namespace("localzet-launcher");
         let root = GtkBox::new(Orientation::Vertical, 10);
         root.set_margin_start(14); root.set_margin_end(14);
         root.set_margin_top(14); root.set_margin_bottom(14);
