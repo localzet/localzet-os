@@ -1,0 +1,5 @@
+#!/bin/sh
+localzet-panel &
+swaybg -c '#18202d' &
+localzet-desktop &
+/usr/local/bin/localzet-guest-boot-marker &
