@@ -1,0 +1,20 @@
+name: Подготовка релиза
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Архив исходников
+        run: |
+          tar --exclude=.git -czf localzet-os-source.tar.gz .
+          sha256sum localzet-os-source.tar.gz > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: localzet-os-source
+          path: |
+            localzet-os-source.tar.gz
+            SHA256SUMS
