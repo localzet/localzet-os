@@ -1,0 +1,33 @@
+name: Сборка Live ISO (ручной запуск)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  iso:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Проверить полное дерево исходников
+        run: bash scripts/check-source-tree.sh
+      - name: Подготовить инструменты live-build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y live-build rsync qemu-system-x86 python3
+      - name: Собрать ISO
+        run: |
+          bash scripts/build-localzet-live.sh
+      - name: Собрать сведения об ISO
+        run: |
+          find out/localzet-live -maxdepth 1 -name '*.iso' -type f -print
+          test -s out/localzet-live/SHA256SUMS
+      - name: Опубликовать ISO как CI-артефакт, НЕ релиз
+        uses: actions/upload-artifact@v4
+        with:
+          name: localzet-os-unverified-live-iso
+          path: |
+            out/localzet-live/*.iso
+            out/localzet-live/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 7
