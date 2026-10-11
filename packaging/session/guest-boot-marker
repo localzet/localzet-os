@@ -1,7 +1,24 @@
 #!/usr/bin/env bash
-# Emit a guest-side signal after the compositor launches the autostart hook.
-# This is a smoke-test marker, not an attestation or a security guarantee.
+# Signal readiness only when both native desktop programs run.
 set -euo pipefail
-[[ -n "${WAYLAND_DISPLAY:-}" ]] || exit 0
-[[ -e /dev/ttyS0 && -w /dev/ttyS0 ]] || exit 0
-printf 'LOCALZET_GUI_SESSION_READY_V1\n' > /dev/ttyS0
+[[ -n "${WAYLAND_DISPLAY:-}" ]] || exit 1
+[[ -w /dev/ttyS0 ]] || exit 1
+process_running() {
+    local expected="$1" proc executable
+    for proc in /proc/[0-9]*; do
+        [[ -r "$proc/status" ]] || continue
+        [[ "$(stat -c %u "$proc" 2>/dev/null)" == "$(id -u)" ]] || continue
+        executable="$(readlink "$proc/exe" 2>/dev/null || true)"
+        [[ "${executable##*/}" == "$expected" ]] && return 0
+    done
+    return 1
+}
+for _ in $(seq 1 30); do
+    if process_running localzet-panel && process_running localzet-desktop; then
+        printf 'LOCALZET_GUI_SESSION_READY_V2\n' > /dev/ttyS0
+        exit 0
+    fi
+    sleep 1
+done
+echo 'Localzet graphical apps did not start within 30 seconds' >&2
+exit 1
