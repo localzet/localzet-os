@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Localzet Desktop
+Exec=localzet-desktop
+Type=Application
+Terminal=false
+Categories=System;Settings;
