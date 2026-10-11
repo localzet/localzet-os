@@ -1,0 +1,9 @@
+/target/
+/out/
+/build/
+*.iso
+*.img
+*.qcow2
+*.log
+.env
+.DS_Store
