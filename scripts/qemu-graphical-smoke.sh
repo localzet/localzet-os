@@ -18,7 +18,7 @@ import datetime, hashlib, json, pathlib, sys
 iso, log, output, code = sys.argv[1:]
 iso_sha = hashlib.sha256(pathlib.Path(iso).read_bytes()).hexdigest()
 serial = pathlib.Path(log).read_text(encoding='utf-8', errors='replace')
-marker = 'LOCALZET_GUI_SESSION_READY_V1'
+marker = 'LOCALZET_GUI_SESSION_READY_V2'
 ready = any(line.strip() == marker for line in serial.splitlines())
 report = {
     'schema_version': 1, 'iso_sha256': iso_sha, 'qemu_booted': ready,
