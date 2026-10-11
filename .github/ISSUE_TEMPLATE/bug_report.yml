@@ -1,0 +1,23 @@
+name: Сообщение об ошибке
+description: Сообщить о воспроизводимой проблеме
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Описание ошибки
+      description: Что произошло?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Шаги воспроизведения
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Окружение и логи
+      description: Версия, оборудование, QEMU, логи без секретов
