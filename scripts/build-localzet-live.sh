@@ -10,7 +10,7 @@ for cmd in lb sudo rsync sha256sum; do command -v "$cmd" >/dev/null || { echo "M
 "$ROOT/scripts/preflight.sh" --build
 mkdir -p "$OUT"
 cd "$OUT"
-lb config --distribution trixie --architectures amd64 --binary-images iso-hybrid --archive-areas 'main contrib non-free-firmware' --debian-installer none
+lb config --distribution trixie --architectures amd64 --binary-images iso-hybrid --archive-areas 'main contrib non-free-firmware' --debian-installer none --bootappend-live "boot=live components console=tty0 console=ttyS0,115200n8"
 mkdir -p config/package-lists config/includes.chroot/opt/localzet-os config/hooks/live
 cat > config/package-lists/localzet.list.chroot <<'PACKAGES'
 linux-image-amd64 live-boot live-config systemd-sysv
@@ -42,7 +42,7 @@ install -Dm644 packaging/systemd/localzetd.service /etc/systemd/system/localzetd
 for f in autostart rc.xml; do install -Dm644 "packaging/session/labwc/$f" "/usr/local/share/localzet-os/labwc/$f"; done
 for f in config.jsonc style.css; do install -Dm644 "packaging/session/waybar/$f" "/usr/local/share/localzet-os/waybar/$f"; done
 systemctl enable localzetd.service
-id -u localzet >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo,audio,video,render,netdev localzet
+id -u localzet >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo,audio,video,render,netdev,dialout localzet
 passwd -l localzet
 mkdir -p /etc/lightdm/lightdm.conf.d
 printf '[Seat:*]\nautologin-user=localzet\nautologin-user-timeout=0\nuser-session=localzet\n' > /etc/lightdm/lightdm.conf.d/60-localzet.conf
