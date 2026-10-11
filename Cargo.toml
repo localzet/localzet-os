@@ -1,0 +1,8 @@
+[workspace]
+members = ["crates/localzet-core", "crates/localzetd", "crates/localzetctl", "crates/localzet-desktop", "crates/localzet-panel", "crates/localzet-launcher"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
