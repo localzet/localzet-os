@@ -1,5 +1,6 @@
 #!/bin/sh
-localzet-panel &
+mkdir -p "${XDG_RUNTIME_DIR:-/tmp}/localzet-os"
+localzet-panel > "${XDG_RUNTIME_DIR:-/tmp}/localzet-os/panel.log" 2>&1 &
 swaybg -c '#18202d' &
-localzet-desktop &
+localzet-desktop > "${XDG_RUNTIME_DIR:-/tmp}/localzet-os/desktop.log" 2>&1 &
 /usr/local/bin/localzet-guest-boot-marker &
