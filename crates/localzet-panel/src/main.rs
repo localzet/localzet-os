@@ -25,7 +25,7 @@ fn main() {
         window.set_anchor(Edge::Left, true);
         window.set_anchor(Edge::Right, true);
         window.auto_exclusive_zone_enable();
-        window.set_namespace(Some("localzet-panel"));
+        window.set_namespace("localzet-panel");
         let bar = GtkBox::new(Orientation::Horizontal, 12);
         bar.set_margin_start(14);
         bar.set_margin_end(14);
