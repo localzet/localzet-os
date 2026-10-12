@@ -1,0 +1,55 @@
+name: Alpha 5 ISO build and QEMU boot
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/alpha5-iso.yml'
+permissions:
+  contents: read
+jobs:
+  iso:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /opt/hostedtoolcache /usr/share/dotnet /usr/local/share/powershell
+          df -h /
+      - name: Install live-build and QEMU
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y live-build debootstrap squashfs-tools xorriso isolinux syslinux-common qemu-system-x86 rsync
+      - name: Build Alpha 5 ISO
+        env:
+          LOCALZET_BUILD_DIR: ${{ runner.temp }}/localzet-alpha5
+        run: bash scripts/build-localzet-live.sh
+      - name: Boot ISO in QEMU and verify panel readiness
+        env:
+          LOCALZET_QEMU_TIMEOUT: '360'
+          LOCALZET_BUILD_DIR: ${{ runner.temp }}/localzet-alpha5
+        run: |
+          set -euo pipefail
+          mapfile -t images < <(find "$LOCALZET_BUILD_DIR" -maxdepth 1 -name '*.iso' -type f)
+          test "${#images[@]}" -eq 1
+          bash scripts/qemu-graphical-smoke.sh "${images[0]}" "${{ runner.temp }}/qemu-smoke"
+      - name: Upload ISO and SHA256SUMS
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: localzet-alpha5-iso
+          path: |
+            ${{ runner.temp }}/localzet-alpha5/*.iso
+            ${{ runner.temp }}/localzet-alpha5/SHA256SUMS
+          retention-days: 7
+          if-no-files-found: error
+      - name: Upload boot diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha5-build-boot-diagnostics
+          path: |
+            ${{ runner.temp }}/qemu-smoke/serial.log
+            ${{ runner.temp }}/qemu-smoke/boot-report.json
+            ${{ runner.temp }}/localzet-alpha5/*.log
+          if-no-files-found: ignore
