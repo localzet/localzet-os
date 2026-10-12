@@ -38,13 +38,45 @@ fn main() {
         window.set_keyboard_mode(KeyboardMode::Exclusive);
         window.set_namespace("localzet-launcher");
         let root = GtkBox::new(Orientation::Vertical, 10);
+        root.add_css_class("surface-launcher");
         root.set_margin_start(14); root.set_margin_end(14);
         root.set_margin_top(14); root.set_margin_bottom(14);
         let search = Entry::builder().placeholder_text("Search applications…").build();
         let list = ListBox::new();
+        list.add_css_class("surface-app-list");
         list.set_activate_on_single_click(true);
         let scroll = ScrolledWindow::builder().vexpand(true).child(&list).build();
         root.append(&search); root.append(&scroll);
+        let provider = gtk::CssProvider::new();
+        provider.load_from_data(r#"
+            window { background: transparent; }
+            .surface-launcher {
+                background: rgba(19, 25, 39, 0.94);
+                color: #eef3ff;
+                border: 1px solid rgba(220, 235, 255, 0.22);
+                border-radius: 24px;
+                padding: 12px;
+            }
+            .surface-launcher entry {
+                background: rgba(255, 255, 255, 0.09);
+                color: #ffffff;
+                border-radius: 14px;
+                padding: 10px;
+            }
+            .surface-app-list, .surface-app-list row {
+                background: transparent;
+                color: #edf2ff;
+            }
+            .surface-app-list row { border-radius: 12px; }
+            .surface-app-list row:hover, .surface-app-list row:selected {
+                background: rgba(130, 167, 245, 0.19);
+            }
+        "#);
+        if let Some(display) = gtk::gdk::Display::default() {
+            gtk::style_context_add_provider_for_display(
+                &display, &provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+            );
+        }
         window.set_child(Some(&root));
         fill(&list, "", &window);
         let list_copy = list.clone();
