@@ -16,17 +16,16 @@ permissions:
 jobs:
   iso:
     runs-on: ubuntu-24.04
+    container:
+      image: debian:trixie
+      options: --privileged
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
-      - name: Free disk space
-        run: |
-          sudo rm -rf /usr/local/lib/android /opt/hostedtoolcache /usr/share/dotnet /usr/local/share/powershell
-          df -h /
       - name: Install live-build and QEMU
         run: |
-          sudo apt-get update
-          sudo apt-get install -y live-build debootstrap squashfs-tools xorriso isolinux syslinux-common qemu-system-x86 rsync
+          apt-get update
+          apt-get install -y sudo git ca-certificates live-build debootstrap squashfs-tools xorriso isolinux syslinux-common qemu-system-x86 rsync
       - name: Build Alpha 5 ISO
         env:
           LOCALZET_BUILD_DIR: ${{ runner.temp }}/localzet-alpha5
