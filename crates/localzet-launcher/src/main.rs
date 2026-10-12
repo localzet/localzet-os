@@ -19,11 +19,11 @@ fn load_favorites() -> HashSet<String> {
 }
 
 fn save_favorites(favorites: &HashSet<String>) -> std::io::Result<()> {
-    let path = favorites_path().ok_or_else(|| std::io::Error::other("HOME and XDG_CONFIG_HOME are unset"))?;
+    let path = favorites_path().ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "HOME and XDG_CONFIG_HOME are unset"))?;
     if let Some(parent) = path.parent() { fs::create_dir_all(parent)?; }
     let mut ids: Vec<_> = favorites.iter().collect();
     ids.sort();
-    fs::write(path, ids.into_iter().map(|id| id.as_str()).collect::<Vec<_>>().join("\\n") + "\\n")
+    fs::write(path, ids.into_iter().map(|id| id.as_str()).collect::<Vec<_>>().join("\n") + "\n")
 }
 
 
@@ -71,7 +71,7 @@ fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Lab
     let mut apps = gio::AppInfo::all();
     apps.retain(|app| app.should_show());
     if favorites_only {
-        apps.retain(|app| app.id().is_some_and(|id| favorites.borrow().contains(id.as_str())));
+        apps.retain(|app| app.id().map_or(false, |id| favorites.borrow().contains(id.as_str())));
     }
     apps.sort_by_key(|app| app.display_name().to_lowercase());
     let mut found: usize = 0;
