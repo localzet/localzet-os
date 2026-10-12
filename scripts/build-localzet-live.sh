@@ -10,7 +10,7 @@ for cmd in lb sudo rsync sha256sum; do command -v "$cmd" >/dev/null || { echo "M
 bash "$ROOT/scripts/preflight.sh" --build
 mkdir -p "$OUT"
 cd "$OUT"
-lb config --distribution trixie --architectures amd64 --binary-images iso-hybrid --archive-areas 'main contrib non-free-firmware' --debian-installer none --bootappend-live "boot=live config components username=localzet console=tty0 console=ttyS0,115200n8"
+lb config --mode debian --mirror-bootstrap https://deb.debian.org/debian --mirror-chroot https://deb.debian.org/debian --mirror-binary https://deb.debian.org/debian --distribution trixie --architectures amd64 --binary-images iso-hybrid --archive-areas 'main contrib non-free-firmware' --debian-installer none --bootappend-live "boot=live config components username=localzet console=tty0 console=ttyS0,115200n8"
 mkdir -p config/package-lists config/includes.chroot/opt/localzet-os config/hooks/live
 cat > config/package-lists/localzet.list.chroot <<'PACKAGES'
 linux-image-amd64 live-boot live-config systemd-sysv
