@@ -43,7 +43,7 @@ jobs:
         if: failure() && steps.format.outcome == 'failure'
         run: |
           cargo fmt --all
-          git diff --binary > rustfmt.patch
+          git -c safe.directory="$GITHUB_WORKSPACE" diff --binary > rustfmt.patch
           test -s rustfmt.patch
       - name: Upload rustfmt patch
         if: failure() && steps.format.outcome == 'failure'
