@@ -37,7 +37,11 @@ window { background: transparent; }
 
 fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Label, favorites_only: bool) {
     while let Some(child) = grid.first_child() {
-        grid.remove(&child);
+        if let Ok(row) = child.downcast::<gtk::FlowBoxChild>() {
+            grid.remove(&row);
+        } else {
+            break;
+        }
     }
     let needle = query.trim().to_lowercase();
     let mut apps = gio::AppInfo::all();
@@ -49,7 +53,7 @@ fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Lab
         });
     }
     apps.sort_by_key(|app| app.display_name().to_lowercase());
-    let mut found = 0;
+    let mut found: usize = 0;
     for info in apps {
         let name = info.display_name().to_string();
         let description = info.description().map(|s| s.to_string()).unwrap_or_default();
