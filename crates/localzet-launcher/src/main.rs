@@ -31,6 +31,7 @@ window { background: transparent; }
 .app-tile label { font-size: 11px; color: #e8efff; }
 .launcher button { background: transparent; border: 0; color: #c8d7f5; border-radius: 9px; }
 .launcher button:hover { background: rgba(126,165,255,0.17); }
+.launcher .active-tab { background: rgba(96,151,255,0.22); color: #ffffff; }
 .launcher .app-button { padding: 0; }
 .launcher .app-button:hover { background: rgba(126,165,255,0.17); }
 "#;
@@ -127,6 +128,7 @@ fn main() {
         tabs.append(&all_button);
         tabs.append(&favorites_button);
         root.append(&tabs);
+        all_button.add_css_class("active-tab");
 
         let grid = FlowBox::new();
         grid.set_selection_mode(gtk::SelectionMode::None);
@@ -171,13 +173,15 @@ fn main() {
         let current_filter = favorites_only.clone();
         search.connect_changed(move |entry| populate(&list, entry.text().as_str(), &target, &counter, current_filter.get()));
 
-        for (button, only_favorites) in [(all_button, false), (favorites_button, true)] {
+        for (button, other_button, only_favorites) in [(all_button.clone(), favorites_button.clone(), false), (favorites_button, all_button, true)] {
             let list = grid.clone();
             let target = window.clone();
             let counter = count.clone();
             let search = search.clone();
             let filter = favorites_only.clone();
             button.connect_clicked(move |_| {
+                button.add_css_class("active-tab");
+                other_button.remove_css_class("active-tab");
                 filter.set(only_favorites);
                 populate(&list, search.text().as_str(), &target, &counter, only_favorites);
                 search.grab_focus();
