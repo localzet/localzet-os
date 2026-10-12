@@ -11,11 +11,12 @@ class DesktopBootEvidence(unittest.TestCase):
         self.assertIn("LOCALZET_GUI_SESSION_READY_V3", source)
         self.assertNotIn("LOCALZET_GUI_SESSION_READY_V1", source)
 
-    def test_qemu_requires_v2(self):
+    def test_qemu_requires_v3(self):
         source = (ROOT / "scripts/qemu-graphical-smoke.sh").read_text()
         self.assertIn("LOCALZET_GUI_SESSION_READY_V3", source)
 
     def test_session_logs(self):
         source = (ROOT / "packaging/session/labwc/autostart").read_text()
         self.assertIn("panel.log", source)
-        self.assertNotIn("desktop.log", source)\n        self.assertNotIn("localzet-desktop >", source)
+        self.assertNotIn("desktop.log", source)
+        self.assertNotIn("localzet-desktop >", source)
