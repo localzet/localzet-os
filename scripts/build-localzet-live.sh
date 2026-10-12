@@ -24,7 +24,7 @@ linux-image-amd64 live-boot live-config systemd-sysv
 labwc foot swaybg lightdm xwayland thunar waybar wofi
 network-manager network-manager-gnome dbus-user-session dbus-x11
 pipewire pipewire-pulse wireplumber pavucontrol
-policykit-1-gnome fonts-dejavu-core fonts-noto-core
+lxqt-policykit fonts-dejavu-core fonts-noto-core
 xserver-xorg-input-libinput mesa-utils firmware-linux-free
 sudo curl ca-certificates bash git xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk
 build-essential pkg-config libgtk-4-dev libgtk4-layer-shell-dev rustc cargo
