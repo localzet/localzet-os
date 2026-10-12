@@ -10,7 +10,7 @@ for cmd in lb sudo rsync sha256sum; do command -v "$cmd" >/dev/null || { echo "M
 "$ROOT/scripts/preflight.sh" --build
 mkdir -p "$OUT"
 cd "$OUT"
-lb config --distribution trixie --architectures amd64 --binary-images iso-hybrid --archive-areas 'main contrib non-free-firmware' --debian-installer none --bootappend-live "boot=live components console=tty0 console=ttyS0,115200n8"
+lb config --distribution trixie --architectures amd64 --binary-images iso-hybrid --archive-areas 'main contrib non-free-firmware' --debian-installer none --bootappend-live "boot=live config components username=localzet console=tty0 console=ttyS0,115200n8"
 mkdir -p config/package-lists config/includes.chroot/opt/localzet-os config/hooks/live
 cat > config/package-lists/localzet.list.chroot <<'PACKAGES'
 linux-image-amd64 live-boot live-config systemd-sysv
@@ -43,9 +43,12 @@ for f in autostart rc.xml; do install -Dm644 "packaging/session/labwc/$f" "/usr/
 for f in config.jsonc style.css; do install -Dm644 "packaging/session/waybar/$f" "/usr/local/share/localzet-os/waybar/$f"; done
 systemctl enable localzetd.service
 id -u localzet >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo,audio,video,render,netdev,dialout localzet
+# Lock the password for distribution; LightDM uses PAM autologin.
 passwd -l localzet
-mkdir -p /etc/lightdm/lightdm.conf.d
-printf '[Seat:*]\nautologin-user=localzet\nautologin-user-timeout=0\nuser-session=localzet\n' > /etc/lightdm/lightdm.conf.d/60-localzet.conf
+getent group autologin >/dev/null || groupadd autologin
+usermod -aG autologin localzet
+install -Dm755 packaging/session/localzet-lightdm-session /usr/local/bin/localzet-lightdm-session
+install -Dm644 packaging/session/60-localzet.conf /etc/lightdm/lightdm.conf.d/60-localzet.conf
 rm -rf /tmp/localzet-cargo /opt/localzet-os/target
 HOOK
 chmod +x config/hooks/live/0500-localzet.hook.chroot
