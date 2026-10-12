@@ -75,7 +75,7 @@ fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Lab
     let mut apps = gio::AppInfo::all();
     apps.retain(|app| app.should_show());
     if favorites_only {
-        apps.retain(|app| app.id().map_or(false, |id| favorites.borrow().contains(id.as_str())));
+        apps.retain(|app| app.id().is_some_and(|id| favorites.borrow().contains(id.as_str())));
     }
     apps.sort_by_key(|app| app.display_name().to_lowercase());
     let mut found: usize = 0;
@@ -153,7 +153,7 @@ fn launch_first_match(query: &str, favorites_only: bool, favorites: &HashSet<Str
     apps.retain(|app| app.should_show());
     apps.sort_by_key(|app| app.display_name().to_lowercase());
     for app in apps {
-        if favorites_only && !app.id().map_or(false, |id| favorites.contains(id.as_str())) {
+        if favorites_only && !app.id().is_some_and(|id| favorites.contains(id.as_str())) {
             continue;
         }
         let name = app.display_name().to_lowercase();
