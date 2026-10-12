@@ -23,7 +23,11 @@ fn save_favorites(favorites: &HashSet<String>) -> std::io::Result<()> {
     if let Some(parent) = path.parent() { fs::create_dir_all(parent)?; }
     let mut ids: Vec<_> = favorites.iter().collect();
     ids.sort();
-    fs::write(path, ids.into_iter().map(|id| id.as_str()).collect::<Vec<_>>().join("\n") + "\n")
+    let contents = ids.into_iter().map(|id| id.as_str()).collect::<Vec<_>>().join("\n") + "\n";
+    // Never leave a partially written favorites file after an interrupted write.
+    let temporary = path.with_extension("tmp");
+    fs::write(&temporary, contents)?;
+    fs::rename(temporary, path)
 }
 
 
@@ -138,7 +142,7 @@ fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Lab
         }
         grid.insert(&item, -1);
     }
-    count.set_text(&format!("{found} приложений"));
+    count.set_text(if found == 0 { "Ничего не найдено".to_string() } else { format!("{found} приложений") }.as_str());
 }
 
 fn main() {
