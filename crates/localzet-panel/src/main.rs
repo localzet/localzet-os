@@ -95,7 +95,7 @@ fn dock(app: &Application) {
     bar.append(&start);
     bar.append(&icon_button("system-file-manager-symbolic", "Файлы", "thunar"));
     bar.append(&icon_button("utilities-terminal-symbolic", "Терминал", "foot"));
-    bar.append(&icon_button("preferences-system-symbolic", "Параметры", "localzet-desktop"));
+    bar.append(&icon_button("network-wireless-symbolic", "Настройки сети", "nm-connection-editor"));
     window.set_child(Some(&bar));
     window.present();
 }
