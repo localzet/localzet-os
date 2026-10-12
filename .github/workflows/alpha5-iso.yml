@@ -4,6 +4,13 @@ on:
   push:
     paths:
       - '.github/workflows/alpha5-iso.yml'
+      - 'scripts/build-localzet-live.sh'
+      - 'scripts/preflight.sh'
+      - 'scripts/qemu-graphical-smoke.sh'
+      - 'packaging/**'
+      - 'crates/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
 permissions:
   contents: read
 jobs:
