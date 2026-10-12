@@ -3,7 +3,29 @@
 use gtk::prelude::*;
 use gtk::{gio, glib, Application, ApplicationWindow, Box as GtkBox, Button, Entry, FlowBox, Image, Label, Orientation, ScrolledWindow};
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
-use std::{cell::Cell, rc::Rc};
+use std::{cell::Cell, rc::Rc, collections::HashSet, fs, path::PathBuf};
+
+fn favorites_path() -> Option<PathBuf> {
+    let base = std::env::var_os("XDG_CONFIG_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".config")))?;
+    Some(base.join("localzet-os").join("favorites"))
+}
+
+fn load_favorites() -> HashSet<String> {
+    favorites_path().and_then(|path| fs::read_to_string(path).ok())
+        .map(|text| text.lines().map(str::trim).filter(|id| !id.is_empty()).map(str::to_owned).collect())
+        .unwrap_or_default()
+}
+
+fn save_favorites(favorites: &HashSet<String>) -> std::io::Result<()> {
+    let path = favorites_path().ok_or_else(|| std::io::Error::other("HOME and XDG_CONFIG_HOME are unset"))?;
+    if let Some(parent) = path.parent() { fs::create_dir_all(parent)?; }
+    let mut ids: Vec<_> = favorites.iter().collect();
+    ids.sort();
+    fs::write(path, ids.into_iter().map(|id| id.as_str()).collect::<Vec<_>>().join("\\n") + "\\n")
+}
+
 
 const STYLE: &str = r#"
 * { font-family: 'Noto Sans', sans-serif; }
@@ -32,11 +54,12 @@ window { background: transparent; }
 .launcher button { background: transparent; border: 0; color: #c8d7f5; border-radius: 9px; }
 .launcher button:hover { background: rgba(126,165,255,0.17); }
 .launcher .active-tab { background: rgba(96,151,255,0.22); color: #ffffff; }
+.launcher .favorite-button { font-size: 17px; min-height: 20px; color: #a9c5ff; }
 .launcher .app-button { padding: 0; }
 .launcher .app-button:hover { background: rgba(126,165,255,0.17); }
 "#;
 
-fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Label, favorites_only: bool) {
+fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Label, favorites_only: bool, favorites: &Rc<std::cell::RefCell<HashSet<String>>>) {
     while let Some(child) = grid.first_child() {
         if let Ok(row) = child.downcast::<gtk::FlowBoxChild>() {
             grid.remove(&row);
@@ -48,10 +71,7 @@ fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Lab
     let mut apps = gio::AppInfo::all();
     apps.retain(|app| app.should_show());
     if favorites_only {
-        apps.retain(|app| {
-            let id = app.id().map(|s| s.to_string()).unwrap_or_default();
-            matches!(id.as_str(), "org.gnome.Nautilus.desktop" | "thunar.desktop" | "org.gnome.Terminal.desktop" | "foot.desktop" | "firefox-esr.desktop")
-        });
+        apps.retain(|app| app.id().is_some_and(|id| favorites.borrow().contains(id.as_str())));
     }
     apps.sort_by_key(|app| app.display_name().to_lowercase());
     let mut found: usize = 0;
@@ -80,6 +100,28 @@ fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Lab
         label.set_tooltip_text(Some(&name));
         tile.append(&icon);
         tile.append(&label);
+        if let Some(id) = info.id() {
+            let id = id.to_string();
+            let favorite_button = Button::with_label(if favorites.borrow().contains(&id) { "★" } else { "☆" });
+            favorite_button.set_tooltip_text(Some("Добавить или убрать из избранного"));
+            favorite_button.add_css_class("favorite-button");
+            let favorites = favorites.clone();
+            let grid = grid.clone();
+            let window = window.clone();
+            let count = count.clone();
+            let query = query.to_string();
+            favorite_button.connect_clicked(move |_| {
+                {
+                    let mut current = favorites.borrow_mut();
+                    if !current.insert(id.clone()) { current.remove(&id); }
+                    if let Err(error) = save_favorites(&current) {
+                        eprintln!("Failed to save favorites: {error}");
+                    }
+                }
+                populate(&grid, &query, &window, &count, favorites_only, &favorites);
+            });
+            tile.append(&favorite_button);
+        }
         let button = Button::new();
         button.add_css_class("app-button");
         button.set_child(Some(&tile));
@@ -166,12 +208,14 @@ fn main() {
 
         window.set_child(Some(&root));
         let favorites_only = Rc::new(Cell::new(false));
-        populate(&grid, "", &window, &count, false);
+        let favorites = Rc::new(std::cell::RefCell::new(load_favorites()));
+        populate(&grid, "", &window, &count, false, &favorites);
         let list = grid.clone();
         let target = window.clone();
         let counter = count.clone();
         let current_filter = favorites_only.clone();
-        search.connect_changed(move |entry| populate(&list, entry.text().as_str(), &target, &counter, current_filter.get()));
+        let current_favorites = favorites.clone();
+        search.connect_changed(move |entry| populate(&list, entry.text().as_str(), &target, &counter, current_filter.get(), &current_favorites));
 
         for (button, other_button, only_favorites) in [(all_button.clone(), favorites_button.clone(), false), (favorites_button, all_button, true)] {
             let list = grid.clone();
@@ -179,11 +223,12 @@ fn main() {
             let counter = count.clone();
             let search = search.clone();
             let filter = favorites_only.clone();
+            let favorites = favorites.clone();
             button.connect_clicked(move |clicked| {
                 clicked.add_css_class("active-tab");
                 other_button.remove_css_class("active-tab");
                 filter.set(only_favorites);
-                populate(&list, search.text().as_str(), &target, &counter, only_favorites);
+                populate(&list, search.text().as_str(), &target, &counter, only_favorites, &favorites);
                 search.grab_focus();
             });
         }
