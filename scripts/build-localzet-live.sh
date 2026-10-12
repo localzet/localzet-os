@@ -10,8 +10,12 @@ for cmd in lb sudo rsync sha256sum; do command -v "$cmd" >/dev/null || { echo "M
 bash "$ROOT/scripts/preflight.sh" --build
 mkdir -p "$OUT"
 cd "$OUT"
-lb config --mode debian --mirror-bootstrap https://deb.debian.org/debian --mirror-chroot https://deb.debian.org/debian --mirror-binary https://deb.debian.org/debian --mirror-chroot-security https://security.debian.org/debian-security --mirror-binary-security https://security.debian.org/debian-security --distribution trixie --security false --architectures amd64 --linux-packages linux-image --binary-images iso-hybrid --archive-areas 'main contrib non-free-firmware' --debian-installer none --bootappend-live "boot=live config components username=localzet console=tty0 console=ttyS0,115200n8"
+lb config --mode debian --mirror-bootstrap https://deb.debian.org/debian --mirror-chroot https://deb.debian.org/debian --mirror-binary https://deb.debian.org/debian --mirror-chroot-security https://security.debian.org/debian-security --mirror-binary-security https://security.debian.org/debian-security --distribution trixie --security false --architectures amd64 --linux-packages linux-image --linux-flavours amd64 --binary-images iso-hybrid --archive-areas 'main contrib non-free-firmware' --debian-installer none --bootappend-live "boot=live config components username=localzet console=tty0 console=ttyS0,115200n8"
 mkdir -p config/package-lists config/includes.chroot/opt/localzet-os config/hooks/live config/archives
+# The Ubuntu live-build version probes a removed Debian Contents-amd64.gz index
+# when it must discover kernel flavours. Pin the flavour above and disable
+# auto-selection because linux-image-amd64 is explicitly in our package list.
+
 # Ubuntu-packaged live-build uses the obsolete trixie/updates security suite.
 # Supply the correct Debian 13 suite explicitly instead of its generated entry.
 printf "%s\n" "deb https://security.debian.org/debian-security trixie-security main contrib non-free-firmware" > config/archives/debian-security.list.chroot
