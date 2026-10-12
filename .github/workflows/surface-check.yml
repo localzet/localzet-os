@@ -1,0 +1,35 @@
+name: Localzet Surface checks
+
+on:
+  push:
+    paths:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'crates/**'
+      - 'packaging/session/labwc/**'
+      - 'scripts/check-surface-alpha5.sh'
+      - '.github/workflows/surface-check.yml'
+  pull_request:
+
+jobs:
+  rust-and-session:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GTK4 and layer-shell development libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libgtk-4-dev libgtk4-layer-shell-dev
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Validate session scripts
+        run: |
+          bash -n scripts/check-surface-alpha5.sh
+          bash -n packaging/session/labwc/autostart
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          ET.parse('packaging/session/labwc/rc.xml')
+          PY
+      - name: Compile workspace
+        run: cargo check --workspace
