@@ -73,7 +73,7 @@ fn top_bar(app: &Application) {
 
     let right = GtkBox::new(Orientation::Horizontal, 4);
     right.append(&icon_button("audio-volume-high-symbolic", "Звук", "pavucontrol"));
-    right.append(&icon_button("preferences-system-symbolic", "Параметры", "localzet-desktop"));
+    right.append(&icon_button("network-wireless-symbolic", "Сетевые подключения", "nm-connection-editor"));
     layout.set_end_widget(Some(&right));
     window.set_child(Some(&layout));
     window.present();
