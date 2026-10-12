@@ -179,8 +179,8 @@ fn main() {
             let counter = count.clone();
             let search = search.clone();
             let filter = favorites_only.clone();
-            button.connect_clicked(move |_| {
-                button.add_css_class("active-tab");
+            button.connect_clicked(move |clicked| {
+                clicked.add_css_class("active-tab");
                 other_button.remove_css_class("active-tab");
                 filter.set(only_favorites);
                 populate(&list, search.text().as_str(), &target, &counter, only_favorites);
