@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Observe a guest boot; stop QEMU when the complete V2 marker arrives.
+# Observe a guest boot; stop QEMU when the V3 panel readiness marker arrives.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ISO="${1:-}"
@@ -21,7 +21,7 @@ iso = Path(sys.argv[1]).resolve()
 out = Path(sys.argv[2]).resolve()
 log = out / 'serial.log'
 report_path = out / 'boot-report.json'
-marker = b'LOCALZET_GUI_SESSION_READY_V2'
+marker = b'LOCALZET_GUI_SESSION_READY_V3'
 timeout = int(os.environ.get('LOCALZET_QEMU_TIMEOUT', '240'))
 if not 1 <= timeout <= 3600:
     raise SystemExit('LOCALZET_QEMU_TIMEOUT must be 1..3600 seconds')
@@ -56,12 +56,12 @@ report = {
     'schema_version': 1, 'iso_sha256': sha, 'qemu_booted': ready,
     'graphical_session_started': ready, 'verified': ready,
     'tested_at_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-    'tester': 'localzet-qemu-guest-serial-marker-v2',
+    'tester': 'localzet-qemu-guest-serial-marker-v3',
     'qemu_exit_code': process.returncode, 'evidence': 'serial.log',
     'elapsed_seconds': round(time.monotonic() - started, 1),
 }
 report_path.write_text(json.dumps(report, indent=2) + '\n')
-print('PASS: guest panel and desktop process marker' if ready else 'FAIL: marker absent')
+print('PASS: guest panel readiness marker' if ready else 'FAIL: marker absent')
 print('Evidence:', report_path)
 raise SystemExit(0 if ready else 1)
 PYCODE
