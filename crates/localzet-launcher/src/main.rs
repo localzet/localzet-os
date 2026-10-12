@@ -100,6 +100,20 @@ fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Lab
         label.set_tooltip_text(Some(&name));
         tile.append(&icon);
         tile.append(&label);
+        let launch_button = Button::new();
+        launch_button.add_css_class("app-button");
+        launch_button.set_child(Some(&tile));
+        let app_info = info.clone();
+        let close_window = window.clone();
+        launch_button.connect_clicked(move |_| {
+            if let Err(error) = app_info.launch(&[], None::<&gio::AppLaunchContext>) {
+                eprintln!("Failed to launch application: {error}");
+            } else {
+                close_window.close();
+            }
+        });
+        let item = GtkBox::new(Orientation::Vertical, 0);
+        item.append(&launch_button);
         if let Some(id) = info.id() {
             let id = id.to_string();
             let favorite_button = Button::with_label(if favorites.borrow().contains(&id) { "★" } else { "☆" });
@@ -120,21 +134,9 @@ fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Lab
                 }
                 populate(&grid, &query, &window, &count, favorites_only, &favorites);
             });
-            tile.append(&favorite_button);
+            item.append(&favorite_button);
         }
-        let button = Button::new();
-        button.add_css_class("app-button");
-        button.set_child(Some(&tile));
-        let app_info = info.clone();
-        let close_window = window.clone();
-        button.connect_clicked(move |_| {
-            if let Err(error) = app_info.launch(&[], None::<&gio::AppLaunchContext>) {
-                eprintln!("Failed to launch application: {error}");
-            } else {
-                close_window.close();
-            }
-        });
-        grid.insert(&button, -1);
+        grid.insert(&item, -1);
     }
     count.set_text(&format!("{found} приложений"));
 }
