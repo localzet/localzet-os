@@ -1,6 +1,7 @@
 #!/bin/sh
+# Localzet Shell: only the shell is started automatically.
+# The diagnostics window is available from the application menu.
 mkdir -p "${XDG_RUNTIME_DIR:-/tmp}/localzet-os"
+swaybg -c '#101522' &
 localzet-panel > "${XDG_RUNTIME_DIR:-/tmp}/localzet-os/panel.log" 2>&1 &
-swaybg -c '#18202d' &
-localzet-desktop > "${XDG_RUNTIME_DIR:-/tmp}/localzet-os/desktop.log" 2>&1 &
 /usr/local/bin/localzet-guest-boot-marker &
