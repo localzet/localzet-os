@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-24.04
     container: debian:trixie
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install GTK4 and layer-shell development libraries
         run: |
           apt-get update
