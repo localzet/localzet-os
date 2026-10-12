@@ -3,6 +3,7 @@
   <keyboard>
     <keybind key="W-Return"><action name="Execute" command="foot" /></keybind>
     <keybind key="W-d"><action name="Execute" command="localzet-launcher" /></keybind>
+    <keybind key="W-space"><action name="Execute" command="localzet-launcher" /></keybind>
     <keybind key="W-e"><action name="Execute" command="localzet-desktop" /></keybind>
     <keybind key="A-F4"><action name="Close" /></keybind>
     <keybind key="W-Tab"><action name="NextWindow" /></keybind>
