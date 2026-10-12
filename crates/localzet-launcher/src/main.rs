@@ -3,6 +3,7 @@
 use gtk::prelude::*;
 use gtk::{gio, glib, Application, ApplicationWindow, Box as GtkBox, Button, Entry, FlowBox, Image, Label, Orientation, ScrolledWindow};
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
+use std::{cell::Cell, rc::Rc};
 
 const STYLE: &str = r#"
 * { font-family: 'Noto Sans', sans-serif; }
@@ -30,15 +31,23 @@ window { background: transparent; }
 .app-tile label { font-size: 11px; color: #e8efff; }
 .launcher button { background: transparent; border: 0; color: #c8d7f5; border-radius: 9px; }
 .launcher button:hover { background: rgba(126,165,255,0.17); }
+.launcher .app-button { padding: 0; }
+.launcher .app-button:hover { background: rgba(126,165,255,0.17); }
 "#;
 
-fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Label) {
+fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Label, favorites_only: bool) {
     while let Some(child) = grid.first_child() {
         grid.remove(&child);
     }
     let needle = query.trim().to_lowercase();
     let mut apps = gio::AppInfo::all();
     apps.retain(|app| app.should_show());
+    if favorites_only {
+        apps.retain(|app| {
+            let id = app.id().map(|s| s.to_string()).unwrap_or_default();
+            matches!(id.as_str(), "org.gnome.Nautilus.desktop" | "thunar.desktop" | "org.gnome.Terminal.desktop" | "foot.desktop" | "firefox-esr.desktop")
+        });
+    }
     apps.sort_by_key(|app| app.display_name().to_lowercase());
     let mut found = 0;
     for info in apps {
@@ -98,7 +107,7 @@ fn main() {
 
         let root = GtkBox::new(Orientation::Vertical, 12);
         root.add_css_class("launcher");
-        let title = Label::new(Some("ПРИЛОЖЕНИЯ"));
+        let title = Label::new(Some("LOCALZET · ПРИЛОЖЕНИЯ"));
         title.add_css_class("heading");
         title.set_xalign(0.0);
         root.append(&title);
@@ -107,6 +116,13 @@ fn main() {
             .placeholder_text("Поиск приложений…")
             .build();
         root.append(&search);
+
+        let tabs = GtkBox::new(Orientation::Horizontal, 6);
+        let all_button = Button::with_label("Все приложения");
+        let favorites_button = Button::with_label("Быстрый доступ");
+        tabs.append(&all_button);
+        tabs.append(&favorites_button);
+        root.append(&tabs);
 
         let grid = FlowBox::new();
         grid.set_selection_mode(gtk::SelectionMode::None);
@@ -143,11 +159,26 @@ fn main() {
         }
 
         window.set_child(Some(&root));
-        populate(&grid, "", &window, &count);
+        let favorites_only = Rc::new(Cell::new(false));
+        populate(&grid, "", &window, &count, false);
         let list = grid.clone();
         let target = window.clone();
         let counter = count.clone();
-        search.connect_changed(move |entry| populate(&list, entry.text().as_str(), &target, &counter));
+        let current_filter = favorites_only.clone();
+        search.connect_changed(move |entry| populate(&list, entry.text().as_str(), &target, &counter, current_filter.get()));
+
+        for (button, only_favorites) in [(all_button, false), (favorites_button, true)] {
+            let list = grid.clone();
+            let target = window.clone();
+            let counter = count.clone();
+            let search = search.clone();
+            let filter = favorites_only.clone();
+            button.connect_clicked(move |_| {
+                filter.set(only_favorites);
+                populate(&list, search.text().as_str(), &target, &counter, only_favorites);
+                search.grab_focus();
+            });
+        }
 
         let key = gtk::EventControllerKey::new();
         let target = window.clone();
