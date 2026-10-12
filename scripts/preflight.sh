@@ -11,7 +11,10 @@ if [[ "$MODE" == --build ]]; then
   done
   if [[ "$(uname -m)" != x86_64 ]]; then echo 'WARNING: amd64 ISO builds are tested only on x86_64 hosts' >&2; fi
   if [[ -r /etc/os-release ]]; then . /etc/os-release; echo "Host: ${PRETTY_NAME:-unknown}"; fi
-  available_kb="$(df -Pk "${LOCALZET_BUILD_DIR:-.}" 2>/dev/null | awk 'NR==2 {print $4}')"
+  available_kb="$(df -Pk "${LOCALZET_BUILD_DIR:-.}" 2>/dev/null | awk 'NR==2 {print $4}' || true)"
+  if [[ -z "$available_kb" ]]; then
+    available_kb="$(df -Pk . | awk 'NR==2 {print $4}')"
+  fi
   if [[ -n "$available_kb" && "$available_kb" -lt 10485760 ]]; then echo 'WARNING: less than 10 GiB free for build' >&2; fi
 fi
 if ((errors)); then echo "$errors missing dependencies" >&2; exit 1; fi
