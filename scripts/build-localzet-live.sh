@@ -7,7 +7,7 @@ case "$OUT" in /|"$ROOT"|"$ROOT/"|/etc|/usr|/home) echo "Unsafe build directory:
 [[ ! -L "$OUT" ]] || { echo "Build directory cannot be a symlink" >&2; exit 2; }
 for cmd in lb sudo rsync sha256sum; do command -v "$cmd" >/dev/null || { echo "Missing $cmd" >&2; exit 1; }; done
 [[ ! -e "$OUT/config" ]] || { echo "Build directory already configured: $OUT. Remove manually to rebuild." >&2; exit 2; }
-"$ROOT/scripts/preflight.sh" --build
+bash "$ROOT/scripts/preflight.sh" --build
 mkdir -p "$OUT"
 cd "$OUT"
 lb config --distribution trixie --architectures amd64 --binary-images iso-hybrid --archive-areas 'main contrib non-free-firmware' --debian-installer none --bootappend-live "boot=live config components username=localzet console=tty0 console=ttyS0,115200n8"
