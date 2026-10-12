@@ -31,6 +31,7 @@ jobs:
           LOCALZET_BUILD_DIR: ${{ runner.temp }}/localzet-alpha5
         run: bash scripts/build-localzet-live.sh
       - name: Boot ISO in QEMU and verify panel readiness
+        shell: bash
         env:
           LOCALZET_QEMU_TIMEOUT: '360'
           LOCALZET_BUILD_DIR: ${{ runner.temp }}/localzet-alpha5
