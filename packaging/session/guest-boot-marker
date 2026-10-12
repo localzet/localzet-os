@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Signal readiness only when both native desktop programs run.
+# Signal readiness when the native Localzet panel runs in a Wayland session.
 set -euo pipefail
 [[ -n "${WAYLAND_DISPLAY:-}" ]] || exit 1
 [[ -w /dev/ttyS0 ]] || exit 1
@@ -14,11 +14,11 @@ process_running() {
     return 1
 }
 for _ in $(seq 1 30); do
-    if process_running localzet-panel && process_running localzet-desktop; then
-        printf 'LOCALZET_GUI_SESSION_READY_V2\n' > /dev/ttyS0
+    if process_running localzet-panel; then
+        printf 'LOCALZET_GUI_SESSION_READY_V3\n' > /dev/ttyS0
         exit 0
     fi
     sleep 1
 done
-echo 'Localzet graphical apps did not start within 30 seconds' >&2
+echo 'Localzet graphical panel did not start within 30 seconds' >&2
 exit 1
