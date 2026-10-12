@@ -145,6 +145,31 @@ fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Lab
     count.set_text(if found == 0 { "Ничего не найдено".to_string() } else { format!("{found} приложений") }.as_str());
 }
 
+/// Launch the first visible application matching the search query.
+fn launch_first_match(query: &str, favorites_only: bool, favorites: &HashSet<String>) -> bool {
+    let needle = query.trim().to_lowercase();
+    if needle.is_empty() { return false; }
+    let mut apps = gio::AppInfo::all();
+    apps.retain(|app| app.should_show());
+    apps.sort_by_key(|app| app.display_name().to_lowercase());
+    for app in apps {
+        if favorites_only && !app.id().map_or(false, |id| favorites.contains(id.as_str())) {
+            continue;
+        }
+        let name = app.display_name().to_lowercase();
+        let description = app.description().map(|value| value.to_lowercase()).unwrap_or_default();
+        if !name.contains(&needle) && !description.contains(&needle) { continue; }
+        match app.launch(&[], None::<&gio::AppLaunchContext>) {
+            Ok(()) => return true,
+            Err(error) => {
+                eprintln!("Failed to launch application: {error}");
+                return false;
+            }
+        }
+    }
+    false
+}
+
 fn main() {
     let app = Application::builder().application_id("cloud.localzet.Launcher").build();
     app.connect_activate(|app| {
@@ -238,6 +263,16 @@ fn main() {
                 search.grab_focus();
             });
         }
+
+        // Enter launches the first search result; Escape closes the overlay.
+        let search_window = window.clone();
+        let search_filter = favorites_only.clone();
+        let search_favorites = favorites.clone();
+        search.connect_activate(move |entry| {
+            if launch_first_match(entry.text().as_str(), search_filter.get(), &search_favorites.borrow()) {
+                search_window.close();
+            }
+        });
 
         let key = gtk::EventControllerKey::new();
         let target = window.clone();
