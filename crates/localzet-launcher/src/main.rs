@@ -1,9 +1,12 @@
 //! Localzet Surface launcher: compact searchable application grid.
 //! Application launch uses GIO desktop entries, never interpolated shell commands.
 use gtk::prelude::*;
-use gtk::{gio, glib, Application, ApplicationWindow, Box as GtkBox, Button, Entry, FlowBox, Image, Label, Orientation, ScrolledWindow};
+use gtk::{
+    gio, glib, Application, ApplicationWindow, Box as GtkBox, Button, Entry, FlowBox, Image, Label,
+    Orientation, ScrolledWindow,
+};
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
-use std::{cell::Cell, rc::Rc, collections::HashSet, fs, path::PathBuf};
+use std::{cell::Cell, collections::HashSet, fs, path::PathBuf, rc::Rc};
 
 fn favorites_path() -> Option<PathBuf> {
     let base = std::env::var_os("XDG_CONFIG_HOME")
@@ -13,23 +16,41 @@ fn favorites_path() -> Option<PathBuf> {
 }
 
 fn load_favorites() -> HashSet<String> {
-    favorites_path().and_then(|path| fs::read_to_string(path).ok())
-        .map(|text| text.lines().map(str::trim).filter(|id| !id.is_empty()).map(str::to_owned).collect())
+    favorites_path()
+        .and_then(|path| fs::read_to_string(path).ok())
+        .map(|text| {
+            text.lines()
+                .map(str::trim)
+                .filter(|id| !id.is_empty())
+                .map(str::to_owned)
+                .collect()
+        })
         .unwrap_or_default()
 }
 
 fn save_favorites(favorites: &HashSet<String>) -> std::io::Result<()> {
-    let path = favorites_path().ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "HOME and XDG_CONFIG_HOME are unset"))?;
-    if let Some(parent) = path.parent() { fs::create_dir_all(parent)?; }
+    let path = favorites_path().ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "HOME and XDG_CONFIG_HOME are unset",
+        )
+    })?;
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
     let mut ids: Vec<_> = favorites.iter().collect();
     ids.sort();
-    let contents = ids.into_iter().map(|id| id.as_str()).collect::<Vec<_>>().join("\n") + "\n";
+    let contents = ids
+        .into_iter()
+        .map(|id| id.as_str())
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n";
     // Never leave a partially written favorites file after an interrupted write.
     let temporary = path.with_extension("tmp");
     fs::write(&temporary, contents)?;
     fs::rename(temporary, path)
 }
-
 
 const STYLE: &str = r#"
 * { font-family: 'Noto Sans', sans-serif; }
@@ -63,7 +84,14 @@ window { background: transparent; }
 .launcher .app-button:hover { background: rgba(126,165,255,0.17); }
 "#;
 
-fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Label, favorites_only: bool, favorites: &Rc<std::cell::RefCell<HashSet<String>>>) {
+fn populate(
+    grid: &FlowBox,
+    query: &str,
+    window: &ApplicationWindow,
+    count: &Label,
+    favorites_only: bool,
+    favorites: &Rc<std::cell::RefCell<HashSet<String>>>,
+) {
     while let Some(child) = grid.first_child() {
         if let Ok(row) = child.downcast::<gtk::FlowBoxChild>() {
             grid.remove(&row);
@@ -75,13 +103,19 @@ fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Lab
     let mut apps = gio::AppInfo::all();
     apps.retain(|app| app.should_show());
     if favorites_only {
-        apps.retain(|app| app.id().is_some_and(|id| favorites.borrow().contains(id.as_str())));
+        apps.retain(|app| {
+            app.id()
+                .is_some_and(|id| favorites.borrow().contains(id.as_str()))
+        });
     }
     apps.sort_by_key(|app| app.display_name().to_lowercase());
     let mut found: usize = 0;
     for info in apps {
         let name = info.display_name().to_string();
-        let description = info.description().map(|s| s.to_string()).unwrap_or_default();
+        let description = info
+            .description()
+            .map(|s| s.to_string())
+            .unwrap_or_default();
         if !needle.is_empty()
             && !name.to_lowercase().contains(&needle)
             && !description.to_lowercase().contains(&needle)
@@ -120,7 +154,11 @@ fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Lab
         item.append(&launch_button);
         if let Some(id) = info.id() {
             let id = id.to_string();
-            let favorite_button = Button::with_label(if favorites.borrow().contains(&id) { "★" } else { "☆" });
+            let favorite_button = Button::with_label(if favorites.borrow().contains(&id) {
+                "★"
+            } else {
+                "☆"
+            });
             favorite_button.set_tooltip_text(Some("Добавить или убрать из избранного"));
             favorite_button.add_css_class("favorite-button");
             let favorites = favorites.clone();
@@ -131,7 +169,9 @@ fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Lab
             favorite_button.connect_clicked(move |_| {
                 {
                     let mut current = favorites.borrow_mut();
-                    if !current.insert(id.clone()) { current.remove(&id); }
+                    if !current.insert(id.clone()) {
+                        current.remove(&id);
+                    }
                     if let Err(error) = save_favorites(&current) {
                         eprintln!("Failed to save favorites: {error}");
                     }
@@ -142,13 +182,22 @@ fn populate(grid: &FlowBox, query: &str, window: &ApplicationWindow, count: &Lab
         }
         grid.insert(&item, -1);
     }
-    count.set_text(if found == 0 { "Ничего не найдено".to_string() } else { format!("{found} приложений") }.as_str());
+    count.set_text(
+        if found == 0 {
+            "Ничего не найдено".to_string()
+        } else {
+            format!("{found} приложений")
+        }
+        .as_str(),
+    );
 }
 
 /// Launch the first visible application matching the search query.
 fn launch_first_match(query: &str, favorites_only: bool, favorites: &HashSet<String>) -> bool {
     let needle = query.trim().to_lowercase();
-    if needle.is_empty() { return false; }
+    if needle.is_empty() {
+        return false;
+    }
     let mut apps = gio::AppInfo::all();
     apps.retain(|app| app.should_show());
     apps.sort_by_key(|app| app.display_name().to_lowercase());
@@ -157,8 +206,13 @@ fn launch_first_match(query: &str, favorites_only: bool, favorites: &HashSet<Str
             continue;
         }
         let name = app.display_name().to_lowercase();
-        let description = app.description().map(|value| value.to_lowercase()).unwrap_or_default();
-        if !name.contains(&needle) && !description.contains(&needle) { continue; }
+        let description = app
+            .description()
+            .map(|value| value.to_lowercase())
+            .unwrap_or_default();
+        if !name.contains(&needle) && !description.contains(&needle) {
+            continue;
+        }
         match app.launch(&[], None::<&gio::AppLaunchContext>) {
             Ok(()) => return true,
             Err(error) => {
@@ -171,11 +225,16 @@ fn launch_first_match(query: &str, favorites_only: bool, favorites: &HashSet<Str
 }
 
 fn main() {
-    let app = Application::builder().application_id("cloud.localzet.Launcher").build();
+    let app = Application::builder()
+        .application_id("cloud.localzet.Launcher")
+        .build();
     app.connect_activate(|app| {
         let window = ApplicationWindow::builder()
-            .application(app).title("Localzet · Приложения")
-            .default_width(520).default_height(470).build();
+            .application(app)
+            .title("Localzet · Приложения")
+            .default_width(520)
+            .default_height(470)
+            .build();
         window.init_layer_shell();
         window.set_layer(Layer::Overlay);
         window.set_anchor(Edge::Top, true);
@@ -212,8 +271,10 @@ fn main() {
         grid.set_homogeneous(true);
 
         let scroll = ScrolledWindow::builder()
-            .vexpand(true).hscrollbar_policy(gtk::PolicyType::Never)
-            .child(&grid).build();
+            .vexpand(true)
+            .hscrollbar_policy(gtk::PolicyType::Never)
+            .child(&grid)
+            .build();
         root.append(&scroll);
 
         let footer = GtkBox::new(Orientation::Horizontal, 8);
@@ -233,7 +294,9 @@ fn main() {
         provider.load_from_data(STYLE);
         if let Some(display) = gtk::gdk::Display::default() {
             gtk::style_context_add_provider_for_display(
-                &display, &provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+                &display,
+                &provider,
+                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
             );
         }
 
@@ -246,9 +309,21 @@ fn main() {
         let counter = count.clone();
         let current_filter = favorites_only.clone();
         let current_favorites = favorites.clone();
-        search.connect_changed(move |entry| populate(&list, entry.text().as_str(), &target, &counter, current_filter.get(), &current_favorites));
+        search.connect_changed(move |entry| {
+            populate(
+                &list,
+                entry.text().as_str(),
+                &target,
+                &counter,
+                current_filter.get(),
+                &current_favorites,
+            )
+        });
 
-        for (button, other_button, only_favorites) in [(all_button.clone(), favorites_button.clone(), false), (favorites_button, all_button, true)] {
+        for (button, other_button, only_favorites) in [
+            (all_button.clone(), favorites_button.clone(), false),
+            (favorites_button, all_button, true),
+        ] {
             let list = grid.clone();
             let target = window.clone();
             let counter = count.clone();
@@ -259,7 +334,14 @@ fn main() {
                 clicked.add_css_class("active-tab");
                 other_button.remove_css_class("active-tab");
                 filter.set(only_favorites);
-                populate(&list, search.text().as_str(), &target, &counter, only_favorites, &favorites);
+                populate(
+                    &list,
+                    search.text().as_str(),
+                    &target,
+                    &counter,
+                    only_favorites,
+                    &favorites,
+                );
                 search.grab_focus();
             });
         }
@@ -269,7 +351,11 @@ fn main() {
         let search_filter = favorites_only.clone();
         let search_favorites = favorites.clone();
         search.connect_activate(move |entry| {
-            if launch_first_match(entry.text().as_str(), search_filter.get(), &search_favorites.borrow()) {
+            if launch_first_match(
+                entry.text().as_str(),
+                search_filter.get(),
+                &search_favorites.borrow(),
+            ) {
                 search_window.close();
             }
         });

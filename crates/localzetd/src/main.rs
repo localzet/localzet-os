@@ -31,13 +31,19 @@ fn main() -> io::Result<()> {
     let parent = socket.parent().expect("socket must have parent");
     fs::create_dir_all(parent)?;
     // systemd RuntimeDirectory removes stale sockets at service shutdown.
-    if socket.exists() { fs::remove_file(socket)?; }
+    if socket.exists() {
+        fs::remove_file(socket)?;
+    }
     let listener = UnixListener::bind(socket)?;
     fs::set_permissions(socket, fs::Permissions::from_mode(0o666))?;
     eprintln!("localzetd listening on {SOCKET_PATH}");
     for connection in listener.incoming() {
         match connection {
-            Ok(stream) => { if let Err(err) = serve(stream) { eprintln!("client error: {err}"); } }
+            Ok(stream) => {
+                if let Err(err) = serve(stream) {
+                    eprintln!("client error: {err}");
+                }
+            }
             Err(err) => eprintln!("accept error: {err}"),
         }
     }

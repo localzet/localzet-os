@@ -1,6 +1,8 @@
 //! Localzet Desktop control center and application launcher.
 use gtk::prelude::*;
-use gtk::{Application, ApplicationWindow, Box as GtkBox, Button, Label, Orientation, ScrolledWindow};
+use gtk::{
+    Application, ApplicationWindow, Box as GtkBox, Button, Label, Orientation, ScrolledWindow,
+};
 use std::process::Command;
 
 fn command_button(label: &str, executable: &'static str, args: &'static [&'static str]) -> Button {
@@ -14,7 +16,9 @@ fn command_button(label: &str, executable: &'static str, args: &'static [&'stati
 }
 
 fn main() {
-    let app = Application::builder().application_id("cloud.localzet.Desktop").build();
+    let app = Application::builder()
+        .application_id("cloud.localzet.Desktop")
+        .build();
     app.connect_activate(|app| {
         let window = ApplicationWindow::builder()
             .application(app)

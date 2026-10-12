@@ -1,7 +1,9 @@
 //! Compact Localzet Surface shell for 1080p desktops.
 //! True background blur needs compositor support; these surfaces use alpha only.
 use gtk::prelude::*;
-use gtk::{Application, ApplicationWindow, Box as GtkBox, Button, CenterBox, Image, Label, Orientation};
+use gtk::{
+    Application, ApplicationWindow, Box as GtkBox, Button, CenterBox, Image, Label, Orientation,
+};
 use gtk4_layer_shell::{Edge, Layer, LayerShell};
 use std::process::Command;
 
@@ -46,7 +48,10 @@ fn clock_text() -> String {
 }
 
 fn top_bar(app: &Application) {
-    let window = ApplicationWindow::builder().application(app).title("Localzet Top Bar").build();
+    let window = ApplicationWindow::builder()
+        .application(app)
+        .title("Localzet Top Bar")
+        .build();
     window.init_layer_shell();
     window.set_namespace("localzet-top-bar");
     window.set_layer(Layer::Top);
@@ -72,15 +77,26 @@ fn top_bar(app: &Application) {
     });
 
     let right = GtkBox::new(Orientation::Horizontal, 4);
-    right.append(&icon_button("audio-volume-high-symbolic", "Звук", "pavucontrol"));
-    right.append(&icon_button("network-wireless-symbolic", "Сетевые подключения", "nm-connection-editor"));
+    right.append(&icon_button(
+        "audio-volume-high-symbolic",
+        "Звук",
+        "pavucontrol",
+    ));
+    right.append(&icon_button(
+        "network-wireless-symbolic",
+        "Сетевые подключения",
+        "nm-connection-editor",
+    ));
     layout.set_end_widget(Some(&right));
     window.set_child(Some(&layout));
     window.present();
 }
 
 fn dock(app: &Application) {
-    let window = ApplicationWindow::builder().application(app).title("Localzet Dock").build();
+    let window = ApplicationWindow::builder()
+        .application(app)
+        .title("Localzet Dock")
+        .build();
     window.init_layer_shell();
     window.set_namespace("localzet-dock");
     window.set_layer(Layer::Top);
@@ -93,21 +109,37 @@ fn dock(app: &Application) {
     let start = icon_button("view-app-grid-symbolic", "Пуск", "localzet-launcher");
     start.add_css_class("start-button");
     bar.append(&start);
-    bar.append(&icon_button("system-file-manager-symbolic", "Файлы", "thunar"));
-    bar.append(&icon_button("utilities-terminal-symbolic", "Терминал", "foot"));
-    bar.append(&icon_button("network-wireless-symbolic", "Настройки сети", "nm-connection-editor"));
+    bar.append(&icon_button(
+        "system-file-manager-symbolic",
+        "Файлы",
+        "thunar",
+    ));
+    bar.append(&icon_button(
+        "utilities-terminal-symbolic",
+        "Терминал",
+        "foot",
+    ));
+    bar.append(&icon_button(
+        "network-wireless-symbolic",
+        "Настройки сети",
+        "nm-connection-editor",
+    ));
     window.set_child(Some(&bar));
     window.present();
 }
 
 fn main() {
-    let app = Application::builder().application_id("cloud.localzet.Panel").build();
+    let app = Application::builder()
+        .application_id("cloud.localzet.Panel")
+        .build();
     app.connect_activate(|app| {
         let provider = gtk::CssProvider::new();
         provider.load_from_data(CSS);
         if let Some(display) = gtk::gdk::Display::default() {
             gtk::style_context_add_provider_for_display(
-                &display, &provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+                &display,
+                &provider,
+                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
             );
         }
         top_bar(app);
