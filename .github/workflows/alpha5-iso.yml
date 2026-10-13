@@ -34,7 +34,7 @@ jobs:
         shell: bash
         env:
           LOCALZET_QEMU_TIMEOUT: '360'
-          LOCALZET_BUILD_DIR: $GITHUB_WORKSPACE/iso-build
+          LOCALZET_BUILD_DIR: ${{ github.workspace }}/iso-build
         run: |
           set -euo pipefail
           mapfile -t images < <(find "$LOCALZET_BUILD_DIR" -maxdepth 1 -name '*.iso' -type f)
