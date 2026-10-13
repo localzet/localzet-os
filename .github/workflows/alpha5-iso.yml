@@ -40,12 +40,19 @@ jobs:
           mapfile -t images < <(find "$LOCALZET_BUILD_DIR" -maxdepth 1 -name '*.iso' -type f)
           test "${#images[@]}" -eq 1
           bash scripts/qemu-graphical-smoke.sh "${images[0]}" "$GITHUB_WORKSPACE/qemu-smoke"
+      - name: Stage ISO artifact in workspace
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/iso-artifact"
+          find "${{ runner.temp }}/localzet-alpha5" -maxdepth 1 -type f \( -name "*.iso" -o -name "SHA256SUMS" \) -exec cp -v {} "$GITHUB_WORKSPACE/iso-artifact/" \;
+          ls -lah "$GITHUB_WORKSPACE/iso-artifact"
       - name: Upload ISO and SHA256SUMS
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: localzet-alpha5-iso
-          path: ${{ runner.temp }}/localzet-alpha5/
+          path: iso-artifact/
           retention-days: 7
           if-no-files-found: error
       - name: Print boot diagnostics on failure
