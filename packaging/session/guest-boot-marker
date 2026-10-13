@@ -15,6 +15,9 @@ process_running() {
 }
 for _ in $(seq 1 30); do
     if process_running localzet-panel; then
+        # A process existing for one instant does not prove a stable desktop.
+        sleep 8
+        process_running localzet-panel || continue
         printf 'LOCALZET_GUI_SESSION_READY_V3\n' > /dev/ttyS0
         exit 0
     fi
