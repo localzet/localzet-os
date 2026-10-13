@@ -9,7 +9,7 @@ on:
       source_run_id:
         description: 'Successful ISO artifact source workflow run ID'
         required: true
-        default: '38327931407'
+        default: '38372029996'
 permissions:
   actions: read
   contents: read
@@ -25,7 +25,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: localzet-alpha5-iso
-          run-id: ${{ inputs.source_run_id || '38331748048' }}
+          run-id: ${{ inputs.source_run_id || '38372029996' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: ${{ runner.temp }}/iso
       - name: Verify ISO checksum
