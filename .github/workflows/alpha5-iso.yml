@@ -45,9 +45,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: localzet-alpha5-iso
-          path: |
-            ${{ runner.temp }}/localzet-alpha5/*.iso
-            ${{ runner.temp }}/localzet-alpha5/SHA256SUMS
+          path: ${{ runner.temp }}/localzet-alpha5/
           retention-days: 7
           if-no-files-found: error
       - name: Print boot diagnostics on failure
