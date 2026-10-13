@@ -56,7 +56,7 @@ with log.open('wb') as stream:
                     monitor.settimeout(8)
                     monitor.connect(str(monitor_socket))
                     monitor.recv(4096)
-                    monitor.sendall(f"screendump {screenshot}\\n".encode())
+                    monitor.sendall(f"screendump {screenshot}\n".encode())
                     monitor.recv(4096)
                 time.sleep(2)
             except (OSError, TimeoutError) as error:
