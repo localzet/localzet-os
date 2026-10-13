@@ -57,7 +57,7 @@ with log.open('wb') as stream:
                 except (OSError, TimeoutError) as error:
                     print(f'QEMU boot key injection failed: {error}', file=sys.stderr)
             if log.exists():
-                ready = marker in log.read_bytes().splitlines()
+                ready = marker in log.read_bytes()
                 if ready:
                     break
             if process.poll() is not None:
