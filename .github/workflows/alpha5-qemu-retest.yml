@@ -16,11 +16,14 @@ permissions:
 jobs:
   qemu:
     runs-on: ubuntu-24.04
+    container:
+      image: debian:trixie
+      options: --privileged
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Install QEMU
-        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 python3
+        run: apt-get update && apt-get install -y qemu-system-x86 python3 ca-certificates
       - name: Download previously built ISO
         uses: actions/download-artifact@v4
         with:
