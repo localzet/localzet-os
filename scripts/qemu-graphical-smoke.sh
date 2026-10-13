@@ -12,6 +12,7 @@ import datetime
 import hashlib
 import json
 import os
+import socket
 from pathlib import Path
 import subprocess
 import sys
@@ -21,12 +22,15 @@ iso = Path(sys.argv[1]).resolve()
 out = Path(sys.argv[2]).resolve()
 log = out / 'serial.log'
 report_path = out / 'boot-report.json'
+monitor_socket = out / 'qemu-monitor.sock'
+screenshot = out / 'guest-screen.ppm'
 marker = b'LOCALZET_GUI_SESSION_READY_V3'
 timeout = int(os.environ.get('LOCALZET_QEMU_TIMEOUT', '240'))
 if not 1 <= timeout <= 3600:
     raise SystemExit('LOCALZET_QEMU_TIMEOUT must be 1..3600 seconds')
 command = ['qemu-system-x86_64', '-machine', 'q35', '-m', '4096', '-smp', '4',
-           '-display', 'none', '-serial', 'stdio', '-monitor', 'none',
+           '-display', 'none', '-vga', 'std', '-serial', 'stdio',
+           '-monitor', f'unix:{monitor_socket},server=on,wait=off',
            '-cdrom', str(iso), '-boot', 'd', '-nic', 'user,model=virtio-net-pci', '-no-reboot']
 with iso.open('rb') as stream:
     sha = hashlib.file_digest(stream, 'sha256').hexdigest()
@@ -45,6 +49,18 @@ with log.open('wb') as stream:
                 break
             time.sleep(1)
     finally:
+        # Capture the actual VGA framebuffer even when the guest emits no serial output.
+        if process.poll() is None and monitor_socket.exists():
+            try:
+                with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as monitor:
+                    monitor.settimeout(8)
+                    monitor.connect(str(monitor_socket))
+                    monitor.recv(4096)
+                    monitor.sendall(f"screendump {screenshot}\\n".encode())
+                    monitor.recv(4096)
+                time.sleep(2)
+            except (OSError, TimeoutError) as error:
+                print(f"QEMU screenshot capture failed: {error}", file=sys.stderr)
         if process.poll() is None:
             process.terminate()
             try:
@@ -59,6 +75,7 @@ report = {
     'tester': 'localzet-qemu-guest-serial-marker-v3',
     'qemu_exit_code': process.returncode, 'evidence': 'serial.log',
     'elapsed_seconds': round(time.monotonic() - started, 1),
+    'screen_capture': screenshot.name if screenshot.is_file() else None,
 }
 report_path.write_text(json.dumps(report, indent=2) + '\n')
 print('PASS: guest panel readiness marker' if ready else 'FAIL: marker absent')
