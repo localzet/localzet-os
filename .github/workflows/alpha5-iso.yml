@@ -25,7 +25,7 @@ jobs:
       - name: Install live-build and QEMU
         run: |
           apt-get update
-          apt-get install -y sudo git ca-certificates live-build debootstrap squashfs-tools xorriso isolinux syslinux-common qemu-system-x86 rsync
+          apt-get install -y sudo git python3 ca-certificates live-build debootstrap squashfs-tools xorriso isolinux syslinux-common qemu-system-x86 rsync
       - name: Build Alpha 5 ISO
         env:
           LOCALZET_BUILD_DIR: ${{ runner.temp }}/localzet-alpha5
