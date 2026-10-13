@@ -30,12 +30,12 @@ jobs:
           name: localzet-alpha5-iso
           run-id: ${{ inputs.source_run_id || '38389200044' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: ${{ runner.temp }}/iso
+          path: ${{ github.workspace }}/retest-iso
       - name: Verify ISO checksum
         shell: bash
         run: |
           set -euo pipefail
-          cd "${{ runner.temp }}/iso"
+          cd "${{ github.workspace }}/retest-iso"
           if [[ -f SHA256SUMS ]]; then
             sha256sum -c SHA256SUMS
           else
@@ -48,7 +48,7 @@ jobs:
           LOCALZET_QEMU_TIMEOUT: '360'
         run: |
           set -euo pipefail
-          mapfile -t images < <(find "${{ runner.temp }}/iso" -maxdepth 1 -type f -name '*.iso')
+          mapfile -t images < <(find "${{ github.workspace }}/retest-iso" -maxdepth 1 -type f -name '*.iso')
           test "${#images[@]}" -eq 1
           bash scripts/qemu-graphical-smoke.sh "${images[0]}" "$GITHUB_WORKSPACE/qemu-smoke"
       - name: Print boot diagnostics
