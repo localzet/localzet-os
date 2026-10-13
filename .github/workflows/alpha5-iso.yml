@@ -66,6 +66,7 @@ jobs:
         with:
           name: alpha5-build-boot-diagnostics
           path: |
+            ${{ runner.temp }}/qemu-smoke/guest-screen.ppm
             ${{ runner.temp }}/qemu-smoke/serial.log
             ${{ runner.temp }}/qemu-smoke/boot-report.json
             ${{ runner.temp }}/localzet-alpha5/*.log
