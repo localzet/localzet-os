@@ -64,6 +64,10 @@ with log.open('wb') as stream:
                 break
             time.sleep(1)
     finally:
+        # The serial readiness marker can arrive before the compositor paints its first frame.
+        # Allow the panel and wallpaper time to render before capturing visual evidence.
+        if ready and process.poll() is None:
+            time.sleep(12)
         # Capture the actual VGA framebuffer even when the guest emits no serial output.
         if process.poll() is None and monitor_socket.exists():
             try:
