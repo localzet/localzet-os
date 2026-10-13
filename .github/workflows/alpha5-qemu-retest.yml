@@ -1,0 +1,58 @@
+name: Retest existing Alpha 5 ISO in QEMU
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: 'Successful ISO artifact source workflow run ID'
+        required: true
+        default: '38327931407'
+permissions:
+  actions: read
+  contents: read
+jobs:
+  qemu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 python3
+      - name: Download previously built ISO
+        uses: actions/download-artifact@v4
+        with:
+          name: localzet-alpha5-iso
+          run-id: ${{ inputs.source_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/iso
+      - name: Verify ISO checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${{ runner.temp }}/iso"
+          sha256sum -c SHA256SUMS
+      - name: QEMU graphical smoke
+        shell: bash
+        env:
+          LOCALZET_QEMU_TIMEOUT: '360'
+        run: |
+          set -euo pipefail
+          mapfile -t images < <(find "${{ runner.temp }}/iso" -maxdepth 1 -type f -name '*.iso')
+          test "${#images[@]}" -eq 1
+          bash scripts/qemu-graphical-smoke.sh "${images[0]}" "${{ runner.temp }}/qemu-smoke"
+      - name: Print boot diagnostics
+        if: failure()
+        shell: bash
+        run: |
+          for file in "${{ runner.temp }}/qemu-smoke/boot-report.json" "${{ runner.temp }}/qemu-smoke/serial.log"; do
+            if [[ -f "$file" ]]; then echo "===== $file ====="; tail -c 16000 "$file" || true; fi
+          done
+      - name: Upload boot diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha5-retest-boot-diagnostics
+          path: |
+            ${{ runner.temp }}/qemu-smoke/boot-report.json
+            ${{ runner.temp }}/qemu-smoke/serial.log
+            ${{ runner.temp }}/qemu-smoke/guest-screen.ppm
+          if-no-files-found: ignore
