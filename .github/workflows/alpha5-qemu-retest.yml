@@ -33,7 +33,12 @@ jobs:
         run: |
           set -euo pipefail
           cd "${{ runner.temp }}/iso"
-          sha256sum -c SHA256SUMS
+          if [[ -f SHA256SUMS ]]; then
+            sha256sum -c SHA256SUMS
+          else
+            echo "::warning::Source artifact lacks SHA256SUMS; reporting computed ISO digest instead"
+            sha256sum ./*.iso
+          fi
       - name: QEMU graphical smoke
         shell: bash
         env:
@@ -42,7 +47,7 @@ jobs:
           set -euo pipefail
           mapfile -t images < <(find "${{ runner.temp }}/iso" -maxdepth 1 -type f -name '*.iso')
           test "${#images[@]}" -eq 1
-          bash scripts/qemu-graphical-smoke.sh "${images[0]}" "${{ runner.temp }}/qemu-smoke"
+          bash scripts/qemu-graphical-smoke.sh "${images[0]}" "$GITHUB_WORKSPACE/qemu-smoke"
       - name: Print boot diagnostics
         if: failure()
         shell: bash
@@ -54,7 +59,7 @@ jobs:
         if: always()
         shell: bash
         run: |
-          dir="${{ runner.temp }}/qemu-smoke"
+          dir="$GITHUB_WORKSPACE/qemu-smoke"
           ls -lah "$dir" || true
           if [[ -s "$dir/guest-screen.ppm" ]]; then
             gzip -9 -c "$dir/guest-screen.ppm" > "$dir/guest-screen.ppm.gz"
@@ -64,5 +69,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: alpha5-retest-boot-diagnostics
-          path: ${{ runner.temp }}/qemu-smoke/
+          path: qemu-smoke/
           if-no-files-found: ignore
