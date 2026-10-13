@@ -9,7 +9,7 @@ on:
       source_run_id:
         description: 'Successful ISO artifact source workflow run ID'
         required: true
-        default: '38372029996'
+        default: '38389200044'
 permissions:
   actions: read
   contents: read
@@ -25,7 +25,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: localzet-alpha5-iso
-          run-id: ${{ inputs.source_run_id || '38372029996' }}
+          run-id: ${{ inputs.source_run_id || '38389200044' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: ${{ runner.temp }}/iso
       - name: Verify ISO checksum
@@ -52,7 +52,7 @@ jobs:
         if: failure()
         shell: bash
         run: |
-          for file in "${{ runner.temp }}/qemu-smoke/boot-report.json" "${{ runner.temp }}/qemu-smoke/serial.log"; do
+          for file in "$GITHUB_WORKSPACE/qemu-smoke/boot-report.json" "$GITHUB_WORKSPACE/qemu-smoke/serial.log"; do
             if [[ -f "$file" ]]; then echo "===== $file ====="; tail -c 16000 "$file" || true; fi
           done
       - name: Compress QEMU screen
