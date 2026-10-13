@@ -1,5 +1,9 @@
 name: Retest existing Alpha 5 ISO in QEMU
 on:
+  push:
+    paths:
+      - .github/workflows/alpha5-qemu-retest.yml
+      - scripts/qemu-graphical-smoke.sh
   workflow_dispatch:
     inputs:
       source_run_id:
@@ -21,7 +25,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: localzet-alpha5-iso
-          run-id: ${{ inputs.source_run_id }}
+          run-id: ${{ inputs.source_run_id || '38331748048' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: ${{ runner.temp }}/iso
       - name: Verify ISO checksum
@@ -60,8 +64,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: alpha5-retest-boot-diagnostics
-          path: |
-            ${{ runner.temp }}/qemu-smoke/boot-report.json
-            ${{ runner.temp }}/qemu-smoke/serial.log
-            ${{ runner.temp }}/qemu-smoke/guest-screen.ppm.gz
+          path: ${{ runner.temp }}/qemu-smoke/
           if-no-files-found: ignore
