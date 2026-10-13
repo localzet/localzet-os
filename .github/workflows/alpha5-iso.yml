@@ -28,13 +28,13 @@ jobs:
           apt-get install -y sudo git python3 ca-certificates live-build debootstrap squashfs-tools xorriso isolinux syslinux-common qemu-system-x86 rsync
       - name: Build Alpha 5 ISO
         env:
-          LOCALZET_BUILD_DIR: ${{ runner.temp }}/localzet-alpha5
+          LOCALZET_BUILD_DIR: ${{ github.workspace }}/iso-build
         run: bash scripts/build-localzet-live.sh
       - name: Boot ISO in QEMU and verify panel readiness
         shell: bash
         env:
           LOCALZET_QEMU_TIMEOUT: '360'
-          LOCALZET_BUILD_DIR: ${{ runner.temp }}/localzet-alpha5
+          LOCALZET_BUILD_DIR: $GITHUB_WORKSPACE/iso-build
         run: |
           set -euo pipefail
           mapfile -t images < <(find "$LOCALZET_BUILD_DIR" -maxdepth 1 -name '*.iso' -type f)
@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p "$GITHUB_WORKSPACE/iso-artifact"
-          find "${{ runner.temp }}/localzet-alpha5" -maxdepth 1 -type f \( -name "*.iso" -o -name "SHA256SUMS" \) -exec cp -v {} "$GITHUB_WORKSPACE/iso-artifact/" \;
+          find "$GITHUB_WORKSPACE/iso-build" -maxdepth 1 -type f \( -name "*.iso" -o -name "SHA256SUMS" \) -exec cp -v {} "$GITHUB_WORKSPACE/iso-artifact/" \;
           ls -lah "$GITHUB_WORKSPACE/iso-artifact"
       - name: Upload ISO and SHA256SUMS
         if: always()
