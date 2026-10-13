@@ -76,9 +76,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: alpha5-build-boot-diagnostics
-          path: |
-            ${{ runner.temp }}/qemu-smoke/guest-screen.ppm.gz
-            ${{ runner.temp }}/qemu-smoke/serial.log
-            ${{ runner.temp }}/qemu-smoke/boot-report.json
-            ${{ runner.temp }}/localzet-alpha5/*.log
+          path: ${{ runner.temp }}/qemu-smoke/
           if-no-files-found: ignore
