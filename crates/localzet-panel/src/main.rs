@@ -10,20 +10,20 @@ use std::process::Command;
 const CSS: &str = r#"* { font-family: "Noto Sans", sans-serif; }
 window { background: transparent; }
 .surface-bar, .surface-dock {
- background: rgba(15, 21, 34, 0.88); color: #eaf0ff;
- border: 1px solid rgba(189,207,243,0.17);
- box-shadow: 0 6px 22px rgba(0,0,0,0.32);
+ background: rgba(23, 19, 47, 0.79); color: #f6f2ff;
+ border: 1px solid rgba(211,192,255,0.30);
+ box-shadow: 0 10px 30px rgba(12,8,33,0.38);
 }
-.surface-bar { min-height: 28px; padding: 0 8px; border-radius: 0; border-top: 0; border-left: 0; border-right: 0; }
-.surface-dock { padding: 4px 7px; border-radius: 16px; }
-.surface-bar button, .surface-dock button { background: transparent; border: 0; color: #dce8ff; border-radius: 10px; padding: 0; box-shadow: none; }
-.surface-bar button { min-width: 27px; min-height: 25px; }
+.surface-bar { min-height: 36px; padding: 0 14px; border-radius: 0 0 14px 14px; border-top: 0; }
+.surface-dock { padding: 7px 11px; border-radius: 21px; }
+.surface-bar button, .surface-dock button { background: transparent; border: 0; color: #f0eaff; border-radius: 12px; padding: 0; box-shadow: none; }
+.surface-bar button { min-width: 32px; min-height: 30px; }
 .surface-bar button image { -gtk-icon-size: 15px; }
-.surface-dock button { min-width: 39px; min-height: 39px; }
+.surface-dock button { min-width: 45px; min-height: 45px; }
 .surface-dock button image { -gtk-icon-size: 26px; }
-.surface-bar button:hover, .surface-dock button:hover { background: rgba(167,196,255,0.15); }
-.surface-dock .start-button { background: rgba(88,143,249,0.19); }
-.surface-bar .clock { font-size: 11px; font-weight: 500; color: #eaf0ff; }"#;
+.surface-bar button:hover, .surface-dock button:hover { background: rgba(192,160,255,0.24); }
+.surface-dock .start-button { background: rgba(142,105,250,0.30); }
+.surface-bar .clock { font-size: 12px; font-weight: 600; color: #f7edff; }"#;
 
 fn launch(program: &'static str) {
     if let Err(error) = Command::new(program).spawn() {
@@ -58,7 +58,7 @@ fn top_bar(app: &Application) {
     for edge in [Edge::Top, Edge::Left, Edge::Right] {
         window.set_anchor(edge, true);
     }
-    window.set_exclusive_zone(30);
+    window.set_exclusive_zone(40);
 
     let layout = CenterBox::new();
     layout.add_css_class("surface-bar");
