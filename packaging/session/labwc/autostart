@@ -9,3 +9,12 @@ else
 fi
 localzet-panel > "${XDG_RUNTIME_DIR:-/tmp}/localzet-os/panel.log" 2>&1 &
 /usr/local/bin/localzet-guest-boot-marker &
+# Forward bounded panel diagnostics to the serial console for headless CI.
+(
+    sleep 18
+    if [ -r "${XDG_RUNTIME_DIR:-/tmp}/localzet-os/panel.log" ] && [ -w /dev/ttyS0 ]; then
+        printf "\nLOCALZET_PANEL_LOG_BEGIN\n" > /dev/ttyS0
+        tail -c 12000 "${XDG_RUNTIME_DIR:-/tmp}/localzet-os/panel.log" > /dev/ttyS0
+        printf "\nLOCALZET_PANEL_LOG_END\n" > /dev/ttyS0
+    fi
+) &
