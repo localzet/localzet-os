@@ -35,12 +35,27 @@ command = ['qemu-system-x86_64', '-machine', 'q35', '-m', '4096', '-smp', '4',
 with iso.open('rb') as stream:
     sha = hashlib.file_digest(stream, 'sha256').hexdigest()
 ready = False
+boot_key_sent = False
 started = time.monotonic()
 with log.open('wb') as stream:
     process = subprocess.Popen(command, stdout=stream, stderr=subprocess.STDOUT,
                                stdin=subprocess.DEVNULL)
     try:
         while time.monotonic() - started < timeout:
+            # The live ISO boot menu can wait indefinitely in headless QEMU.
+            # Select its highlighted default entry via the HMP keyboard interface.
+            if not boot_key_sent and time.monotonic() - started >= 8 and monitor_socket.exists():
+                try:
+                    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as monitor:
+                        monitor.settimeout(8)
+                        monitor.connect(str(monitor_socket))
+                        monitor.recv(4096)
+                        monitor.sendall(b'sendkey ret\n')
+                        response = monitor.recv(4096)
+                        print(f'QEMU boot menu ENTER: {response!r}', flush=True)
+                        boot_key_sent = True
+                except (OSError, TimeoutError) as error:
+                    print(f'QEMU boot key injection failed: {error}', file=sys.stderr)
             if log.exists():
                 ready = marker in log.read_bytes().splitlines()
                 if ready:
@@ -76,6 +91,7 @@ report = {
     'qemu_exit_code': process.returncode, 'evidence': 'serial.log',
     'elapsed_seconds': round(time.monotonic() - started, 1),
     'screen_capture': screenshot.name if screenshot.is_file() else None,
+    'boot_key_sent': boot_key_sent,
 }
 report_path.write_text(json.dumps(report, indent=2) + '\n')
 print('PASS: guest panel readiness marker' if ready else 'FAIL: marker absent')
