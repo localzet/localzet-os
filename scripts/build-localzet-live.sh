@@ -27,7 +27,7 @@ pipewire pipewire-pulse wireplumber pavucontrol
 lxqt-policykit fonts-dejavu-core fonts-noto-core
 xserver-xorg-input-libinput mesa-utils firmware-linux-free
 sudo curl ca-certificates bash git xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk
-build-essential pkg-config libgtk-4-dev libgtk4-layer-shell-dev rustc cargo
+build-essential pkg-config libgtk-4-dev libgtk4-layer-shell-dev rustc cargo librsvg2-bin
 PACKAGES
 rsync -a --exclude out --exclude iso-build --exclude iso-artifact --exclude qemu-smoke --exclude target --exclude .git --exclude __pycache__ --exclude "*.pyc" "$ROOT/" config/includes.chroot/opt/localzet-os/
 cat > config/hooks/live/0500-localzet.hook.chroot <<'HOOK'
@@ -41,6 +41,8 @@ install -m755 target/release/localzetctl /usr/local/bin/localzetctl
 install -m755 target/release/localzet-desktop /usr/local/bin/localzet-desktop
 install -m755 target/release/localzet-panel /usr/local/bin/localzet-panel
 install -m755 target/release/localzet-launcher /usr/local/bin/localzet-launcher
+install -d /usr/local/share/localzet-os
+rsvg-convert -w 1920 -h 1080 packaging/wallpaper/sunset-mountains.svg -o /usr/local/share/localzet-os/wallpaper.png
 install -Dm755 packaging/session/localzet-session /usr/local/bin/localzet-session
 install -Dm755 packaging/session/guest-boot-marker /usr/local/bin/localzet-guest-boot-marker
 install -Dm644 packaging/session/localzet.desktop /usr/share/wayland-sessions/localzet.desktop
