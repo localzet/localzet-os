@@ -29,7 +29,7 @@ xserver-xorg-input-libinput mesa-utils firmware-linux-free
 sudo curl ca-certificates bash git xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk
 build-essential pkg-config libgtk-4-dev libgtk4-layer-shell-dev rustc cargo
 PACKAGES
-rsync -a --exclude out --exclude target --exclude .git --exclude __pycache__ --exclude "*.pyc" "$ROOT/" config/includes.chroot/opt/localzet-os/
+rsync -a --exclude out --exclude iso-build --exclude iso-artifact --exclude qemu-smoke --exclude target --exclude .git --exclude __pycache__ --exclude "*.pyc" "$ROOT/" config/includes.chroot/opt/localzet-os/
 cat > config/hooks/live/0500-localzet.hook.chroot <<'HOOK'
 #!/bin/bash
 set -euo pipefail
