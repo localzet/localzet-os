@@ -39,7 +39,7 @@ jobs:
           set -euo pipefail
           mapfile -t images < <(find "$LOCALZET_BUILD_DIR" -maxdepth 1 -name '*.iso' -type f)
           test "${#images[@]}" -eq 1
-          bash scripts/qemu-graphical-smoke.sh "${images[0]}" "${{ runner.temp }}/qemu-smoke"
+          bash scripts/qemu-graphical-smoke.sh "${images[0]}" "$GITHUB_WORKSPACE/qemu-smoke"
       - name: Upload ISO and SHA256SUMS
         if: always()
         uses: actions/upload-artifact@v4
@@ -54,7 +54,7 @@ jobs:
         if: failure()
         shell: bash
         run: |
-          for file in "${{ runner.temp }}/qemu-smoke/boot-report.json" "${{ runner.temp }}/qemu-smoke/serial.log"; do
+          for file in "$GITHUB_WORKSPACE/qemu-smoke/boot-report.json" "$GITHUB_WORKSPACE/qemu-smoke/serial.log"; do
             if [[ -f "$file" ]]; then
               echo "===== $file ====="
               tail -c 16000 "$file" || true
@@ -65,7 +65,7 @@ jobs:
         shell: bash
         run: |
           set -u
-          dir="${{ runner.temp }}/qemu-smoke"
+          dir="$GITHUB_WORKSPACE/qemu-smoke"
           ls -lah "$dir" || true
           if [[ -s "$dir/guest-screen.ppm" ]]; then
             gzip -9 -c "$dir/guest-screen.ppm" > "$dir/guest-screen.ppm.gz"
@@ -76,5 +76,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: alpha5-build-boot-diagnostics
-          path: ${{ runner.temp }}/qemu-smoke/
+          path: qemu-smoke/
           if-no-files-found: ignore
