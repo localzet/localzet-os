@@ -7,7 +7,7 @@ jobs:
   source:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Архив исходников
         run: |
           tar --exclude=.git -czf localzet-os-source.tar.gz .
