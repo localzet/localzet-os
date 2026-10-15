@@ -5,6 +5,15 @@ use gtk::{
 };
 use std::process::Command;
 
+const STYLE: &str = r#"
+window { background: #19162d; color: #f3edff; }
+button { background: rgba(126, 91, 202, 0.25); color: #f5edff;
+ border: 1px solid rgba(211, 185, 255, 0.25); border-radius: 12px;
+ padding: 9px 14px; }
+button:hover { background: rgba(168, 122, 246, 0.38); }
+label.title-1 { color: #f8edff; }
+"#;
+
 fn command_button(label: &str, executable: &'static str, args: &'static [&'static str]) -> Button {
     let button = Button::with_label(label);
     button.connect_clicked(move |_| {
@@ -26,6 +35,15 @@ fn main() {
             .default_width(960)
             .default_height(680)
             .build();
+        let provider = gtk::CssProvider::new();
+        provider.load_from_data(STYLE);
+        if let Some(display) = gtk::gdk::Display::default() {
+            gtk::style_context_add_provider_for_display(
+                &display,
+                &provider,
+                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+            );
+        }
         let root = GtkBox::new(Orientation::Vertical, 18);
         root.set_margin_top(30);
         root.set_margin_bottom(30);
@@ -40,7 +58,7 @@ fn main() {
         root.append(&subtitle);
         let actions = GtkBox::new(Orientation::Horizontal, 10);
         for (name, executable, args) in [
-            ("Applications", "wofi", &["--show", "drun"][..]),
+            ("Applications", "localzet-launcher", &[][..]),
             ("Terminal", "foot", &[][..]),
             ("Files", "thunar", &[][..]),
             ("Network", "nm-connection-editor", &[][..]),
