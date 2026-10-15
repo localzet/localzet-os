@@ -56,30 +56,30 @@ const STYLE: &str = r#"
 * { font-family: 'Noto Sans', sans-serif; }
 window { background: transparent; }
 .launcher {
- background: rgba(17, 23, 38, 0.96); color: #eef3ff;
- border: 1px solid rgba(190, 210, 255, 0.22);
+ background: rgba(25, 20, 49, 0.94); color: #f6f0ff;
+ border: 1px solid rgba(218, 191, 255, 0.32);
  border-radius: 20px; padding: 14px;
- box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+ box-shadow: 0 18px 50px rgba(18, 9, 41, 0.42);
 }
 .launcher entry {
- background: rgba(255,255,255,0.08); color: #ffffff;
- border: 1px solid rgba(220,230,255,0.12);
+ background: rgba(238,220,255,0.10); color: #ffffff;
+ border: 1px solid rgba(220,196,255,0.25);
  border-radius: 11px; min-height: 32px; padding: 4px 10px;
 }
-.launcher .heading { font-size: 12px; font-weight: 700; color: #aabbdc; }
-.launcher .hint { font-size: 10px; color: #8191af; }
+.launcher .heading { font-size: 12px; font-weight: 700; color: #d6bff4; }
+.launcher .hint { font-size: 10px; color: #a99dc4; }
 .launcher flowbox, .launcher flowboxchild { background: transparent; }
 .launcher flowboxchild { border-radius: 12px; }
 .launcher flowboxchild:hover, .launcher flowboxchild:selected {
- background: rgba(126,165,255,0.17);
+ background: rgba(185,147,255,0.21);
 }
 .app-tile { min-width: 92px; min-height: 78px; padding: 8px 3px; }
 .app-tile image { -gtk-icon-size: 30px; }
-.app-tile label { font-size: 11px; color: #e8efff; }
-.launcher button { background: transparent; border: 0; color: #c8d7f5; border-radius: 9px; }
+.app-tile label { font-size: 11px; color: #f1eaff; }
+.launcher button { background: transparent; border: 0; color: #e2d0ff; border-radius: 9px; }
 .launcher button:hover { background: rgba(126,165,255,0.17); }
-.launcher .active-tab { background: rgba(96,151,255,0.22); color: #ffffff; }
-.launcher .favorite-button { font-size: 17px; min-height: 20px; color: #a9c5ff; }
+.launcher .active-tab { background: rgba(152,106,250,0.30); color: #ffffff; }
+.launcher .favorite-button { font-size: 17px; min-height: 20px; color: #d7b5ff; }
 .launcher .app-button { padding: 0; }
 .launcher .app-button:hover { background: rgba(126,165,255,0.17); }
 "#;
