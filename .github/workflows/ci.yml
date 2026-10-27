@@ -47,7 +47,7 @@ jobs:
           test -s rustfmt.patch
       - name: Upload rustfmt patch
         if: failure() && steps.format.outcome == 'failure'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rustfmt-patch
           path: rustfmt.patch
