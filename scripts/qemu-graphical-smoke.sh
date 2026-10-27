@@ -29,6 +29,7 @@ marker = b'LOCALZET_GUI_SESSION_READY_V3'
 timeout = int(os.environ.get('LOCALZET_QEMU_TIMEOUT', '240'))
 if not 1 <= timeout <= 3600:
     raise SystemExit('LOCALZET_QEMU_TIMEOUT must be 1..3600 seconds')
+screenshot.unlink(missing_ok=True)
 command = ['qemu-system-x86_64', '-machine', 'q35', '-m', '4096', '-smp', '4',
            '-display', 'none', '-vga', 'std', '-serial', 'stdio',
            '-monitor', f'unix:{monitor_socket},server=on,wait=off',
@@ -79,7 +80,7 @@ with log.open('wb') as stream:
                     monitor.recv(4096)
                     monitor.sendall(f"screendump {screenshot}\n".encode())
                     response = monitor.recv(4096)
-                    if b"Error" not in response and screenshot.is_file():
+                    if screenshot.is_file():
                         from validate_qemu_screen import is_valid_ppm
                         screen_captured = is_valid_ppm(screenshot)
                         if not screen_captured:
