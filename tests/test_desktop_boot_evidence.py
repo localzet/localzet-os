@@ -1,7 +1,11 @@
 """Contract tests for desktop boot evidence."""
 from pathlib import Path
+import sys
+import tempfile
 import unittest
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from validate_qemu_screen import is_valid_ppm
 
 class DesktopBootEvidence(unittest.TestCase):
     def test_marker_requires_panel(self):
@@ -14,6 +18,23 @@ class DesktopBootEvidence(unittest.TestCase):
     def test_qemu_requires_v3(self):
         source = (ROOT / "scripts/qemu-graphical-smoke.sh").read_text()
         self.assertIn("LOCALZET_GUI_SESSION_READY_V3", source)
+        self.assertIn("verified': ready and screen_captured", source)
+        self.assertIn("screen_captured", source)
+
+    def test_screenshot_validator_rejects_missing_and_truncated_frames(self):
+        with tempfile.TemporaryDirectory() as directory:
+            frame = Path(directory) / "screen.ppm"
+            frame.write_bytes(b"P6\n2 1\n255\n" + bytes(range(6)))
+            self.assertTrue(is_valid_ppm(frame))
+            frame.write_bytes(b"P6\n2 1\n255\n" + bytes(range(5)))
+            self.assertFalse(is_valid_ppm(frame))
+            frame.unlink()
+            self.assertFalse(is_valid_ppm(frame))
+
+    def test_release_gate_requires_screenshot(self):
+        source = (ROOT / "scripts/release-gate.sh").read_text()
+        self.assertIn('data.get("screenshot_captured") is not True', source)
+        self.assertIn("is_valid_ppm", source)
 
     def test_session_logs(self):
         source = (ROOT / "packaging/session/labwc/autostart").read_text()

@@ -7,7 +7,7 @@ OUT="${2:-$ROOT/out/qemu-smoke}"
 [[ -n "$ISO" && -s "$ISO" ]] || { echo 'Usage: qemu-graphical-smoke.sh ISO [OUT]' >&2; exit 2; }
 for cmd in qemu-system-x86_64 python3; do command -v "$cmd" >/dev/null || { echo "Missing $cmd" >&2; exit 2; }; done
 mkdir -p "$OUT"
-python3 - "$ISO" "$OUT" <<'PYCODE'
+python3 - "$ISO" "$OUT" "$ROOT" <<'PYCODE'
 import datetime
 import hashlib
 import json
@@ -20,6 +20,7 @@ import time
 
 iso = Path(sys.argv[1]).resolve()
 out = Path(sys.argv[2]).resolve()
+sys.path.insert(0, sys.argv[3])
 log = out / 'serial.log'
 report_path = out / 'boot-report.json'
 monitor_socket = out / 'qemu-monitor.sock'
@@ -35,6 +36,7 @@ command = ['qemu-system-x86_64', '-machine', 'q35', '-m', '4096', '-smp', '4',
 with iso.open('rb') as stream:
     sha = hashlib.file_digest(stream, 'sha256').hexdigest()
 ready = False
+screen_captured = False
 boot_key_sent = False
 started = time.monotonic()
 with log.open('wb') as stream:
@@ -76,7 +78,14 @@ with log.open('wb') as stream:
                     monitor.connect(str(monitor_socket))
                     monitor.recv(4096)
                     monitor.sendall(f"screendump {screenshot}\n".encode())
-                    monitor.recv(4096)
+                    response = monitor.recv(4096)
+                    if b"Error" not in response and screenshot.is_file():
+                        from validate_qemu_screen import is_valid_ppm
+                        screen_captured = is_valid_ppm(screenshot)
+                        if not screen_captured:
+                            print('QEMU screendump is missing or invalid', file=sys.stderr)
+                    else:
+                        print(f'QEMU screendump failed: {response!r}', file=sys.stderr)
                 time.sleep(2)
             except (OSError, TimeoutError) as error:
                 print(f"QEMU screenshot capture failed: {error}", file=sys.stderr)
@@ -89,16 +98,18 @@ with log.open('wb') as stream:
                 process.wait()
 report = {
     'schema_version': 1, 'iso_sha256': sha, 'qemu_booted': ready,
-    'graphical_session_started': ready, 'verified': ready,
+    'graphical_session_started': ready, 'screenshot_captured': screen_captured,
+    'verified': ready and screen_captured,
     'tested_at_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
     'tester': 'localzet-qemu-guest-serial-marker-v3',
     'qemu_exit_code': process.returncode, 'evidence': 'serial.log',
     'elapsed_seconds': round(time.monotonic() - started, 1),
-    'screen_capture': screenshot.name if screenshot.is_file() else None,
+    'screen_capture': screenshot.name if screen_captured else None,
     'boot_key_sent': boot_key_sent,
 }
 report_path.write_text(json.dumps(report, indent=2) + '\n')
-print('PASS: guest panel readiness marker' if ready else 'FAIL: marker absent')
+print('PASS: guest panel readiness marker and valid screenshot' if ready and screen_captured
+      else 'FAIL: readiness marker or valid screenshot missing')
 print('Evidence:', report_path)
-raise SystemExit(0 if ready else 1)
+raise SystemExit(0 if ready and screen_captured else 1)
 PYCODE
