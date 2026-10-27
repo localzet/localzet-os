@@ -31,11 +31,11 @@ jobs:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
       - name: Check
-        run: cargo check --workspace
+        run: cargo check --locked --workspace
       - name: Test
-        run: cargo test --workspace
+        run: cargo test --locked --workspace
       - name: Clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - name: Format
         id: format
         run: cargo fmt --all -- --check

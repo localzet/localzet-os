@@ -24,7 +24,7 @@ python3 -m unittest discover -s "$ROOT/tests" -p 'test_*.py'
 tests_result=$?
 printf 'PYTHON_TEST_EXIT=%s\n' "$tests_result"
 if command -v cargo >/dev/null 2>&1; then
-  (cd "$ROOT" && CARGO_TARGET_DIR="$ROOT/out/cargo-target" cargo check --workspace --all-targets) 2>&1 | tee "$REPORT/cargo-check.log"
+  (cd "$ROOT" && CARGO_TARGET_DIR="$ROOT/out/cargo-target" cargo check --locked --workspace --all-targets) 2>&1 | tee "$REPORT/cargo-check.log"
   rust_result=${PIPESTATUS[0]}
 else
   rust_result=127

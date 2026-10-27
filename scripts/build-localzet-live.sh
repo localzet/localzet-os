@@ -35,7 +35,7 @@ cat > config/hooks/live/0500-localzet.hook.chroot <<'HOOK'
 set -euo pipefail
 cd /opt/localzet-os
 export CARGO_HOME=/tmp/localzet-cargo
-cargo build --release --workspace
+cargo build --release --workspace --locked
 install -m755 target/release/localzetd /usr/local/bin/localzetd
 install -m755 target/release/localzetctl /usr/local/bin/localzetctl
 install -m755 target/release/localzet-desktop /usr/local/bin/localzet-desktop

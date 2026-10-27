@@ -34,3 +34,8 @@ class LiveBuilderContract(unittest.TestCase):
     def test_windows_app_compatibility_includes_debian_wine(self):
         source = (ROOT / "scripts/build-localzet-live.sh").read_text()
         self.assertIn("wine wine64", source)
+
+    def test_iso_build_uses_locked_rust_dependencies(self):
+        source = (ROOT / "scripts/build-localzet-live.sh").read_text()
+        self.assertTrue((ROOT / "Cargo.lock").is_file())
+        self.assertIn("cargo build --release --workspace --locked", source)

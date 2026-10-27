@@ -27,7 +27,7 @@ chroot "$CHROOT" /bin/bash -c '
   set -euo pipefail
   cd /opt/localzet-os
   export CARGO_HOME=/tmp/localzet-cargo
-  cargo build --release -p localzet-panel -p localzet-launcher
+  cargo build --locked --release -p localzet-panel -p localzet-launcher
 '
 for component in localzet-panel localzet-launcher; do
   test -s "$CHROOT/opt/localzet-os/target/release/$component" || {

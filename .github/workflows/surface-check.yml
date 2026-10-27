@@ -33,4 +33,4 @@ jobs:
           ET.parse('packaging/session/labwc/rc.xml')
           PY
       - name: Compile workspace
-        run: cargo check --workspace
+        run: cargo check --locked --workspace
