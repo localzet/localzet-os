@@ -24,3 +24,9 @@ class LiveBuilderContract(unittest.TestCase):
     def test_live_account_is_password_locked(self):
         source = (ROOT / "scripts/build-localzet-live.sh").read_text()
         self.assertIn("passwd -l localzet", source)
+
+    def test_zsh_is_default_and_bash_remains_available(self):
+        source = (ROOT / "scripts/build-localzet-live.sh").read_text()
+        self.assertIn("bash zsh git", source)
+        self.assertIn("useradd -m -s /usr/bin/zsh", source)
+        self.assertIn("usermod -s /usr/bin/zsh localzet", source)
