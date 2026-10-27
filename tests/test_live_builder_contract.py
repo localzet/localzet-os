@@ -30,3 +30,7 @@ class LiveBuilderContract(unittest.TestCase):
         self.assertIn("bash zsh git", source)
         self.assertIn("useradd -m -s /usr/bin/zsh", source)
         self.assertIn("usermod -s /usr/bin/zsh localzet", source)
+
+    def test_windows_app_compatibility_includes_debian_wine(self):
+        source = (ROOT / "scripts/build-localzet-live.sh").read_text()
+        self.assertIn("wine wine64", source)
