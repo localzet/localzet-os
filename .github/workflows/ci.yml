@@ -10,7 +10,7 @@ jobs:
   source:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Проверка полноты исходников
         run: bash scripts/check-source-tree.sh
       - name: Bash syntax
@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-24.04
     container: debian:trixie
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Source gate
         run: bash scripts/check-source-tree.sh
       - name: GTK dependencies

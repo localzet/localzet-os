@@ -21,7 +21,7 @@ jobs:
       options: --privileged
     timeout-minutes: 180
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install live-build and QEMU
         run: |
           apt-get update
