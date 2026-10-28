@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -14,6 +15,26 @@ SPEC.loader.exec_module(PREFLIGHT)
 
 
 class InstallerPreflightTests(unittest.TestCase):
+    def sample_inventory(self):
+        return {
+            "read_only": True,
+            "boot_mode": "UEFI",
+            "intel_vmd_module_loaded": False,
+            "intel_vmd_controllers": [],
+            "os_probe": {
+                "status": "complete",
+                "systems": [{"partition": "/dev/testp2", "name": "Windows Boot Manager", "family": "Windows", "boot_method": "efi"}],
+            },
+            "disks": [{
+                "path": "/dev/test", "read_only": False,
+                "partitions": [
+                    {"path": "/dev/testp1", "filesystem": "vfat", "parttype": PREFLIGHT.EFI_SYSTEM_GUID, "uuid": "esp", "label": "EFI", "mountpoints": []},
+                    {"path": "/dev/testp2", "filesystem": "ntfs", "parttype": None, "uuid": "windows", "label": "Windows", "mountpoints": []},
+                    {"path": "/dev/testp3", "filesystem": None, "parttype": None, "uuid": None, "label": None, "mountpoints": []},
+                ],
+            }],
+        }
+
     def test_inventory_is_read_only_and_keeps_data_partition_metadata(self):
         output = {
             "blockdevices": [
@@ -75,8 +96,68 @@ class InstallerPreflightTests(unittest.TestCase):
             "complex_devices": [],
         })
         self.assertIn("ТОЛЬКО ЧТЕНИЕ", report)
-        self.assertIn("Распознавание установленных ОС", report)
+        self.assertIn("Установленные системы", report)
         self.assertIn("Накопители не обнаружены", report)
+
+    def test_os_probe_requires_privileged_installer_context(self):
+        runner = Mock()
+        result = PREFLIGHT.probe_installed_systems(runner, effective_uid=1000)
+        runner.assert_not_called()
+        self.assertEqual(result["status"], "requires_installer_privileges")
+
+    def test_os_probe_parses_windows_and_ubuntu_records(self):
+        runner = Mock(return_value=SimpleNamespace(
+            returncode=0,
+            stderr="",
+            stdout=(
+                "/dev/nvme0n1p2:Windows Boot Manager:Windows:efi\n"
+                "/dev/nvme0n1p5:Ubuntu 24.04 LTS:Ubuntu:linux\n"
+            ),
+        ))
+        result = PREFLIGHT.probe_installed_systems(runner, effective_uid=0)
+        self.assertEqual(result["status"], "complete")
+        self.assertEqual([system["family"] for system in result["systems"]], ["Windows", "Ubuntu"])
+        self.assertEqual(runner.call_args.args[0], ["os-prober"])
+        self.assertEqual(runner.call_args.kwargs["timeout"], 45)
+
+    def test_install_plan_preserves_os_and_efi_and_cannot_execute(self):
+        plan = PREFLIGHT.build_install_plan(
+            self.sample_inventory(), "/dev/testp3", "/dev/testp1", confirm_format=True
+        )
+        self.assertEqual(plan["preserve_partitions"], ["/dev/testp1", "/dev/testp2"])
+        self.assertFalse(plan["efi_format"])
+        self.assertFalse(plan["executable"])
+        self.assertTrue(plan["preview_only"])
+
+    def test_install_plan_rejects_os_partition_and_requires_explicit_format(self):
+        inventory = self.sample_inventory()
+        with self.assertRaisesRegex(ValueError, "operating system"):
+            PREFLIGHT.build_install_plan(inventory, "/dev/testp2", "/dev/testp1", confirm_format=True)
+        with self.assertRaisesRegex(ValueError, "explicit preview confirmation"):
+            PREFLIGHT.build_install_plan(inventory, "/dev/testp3", "/dev/testp1")
+
+    def test_install_plan_rejects_existing_data_filesystems(self):
+        inventory = self.sample_inventory()
+        inventory["disks"][0]["partitions"][2]["filesystem"] = "ntfs"
+        with self.assertRaisesRegex(ValueError, "Existing data and EFI partitions"):
+            PREFLIGHT.build_install_plan(inventory, "/dev/testp3", "/dev/testp1", confirm_format=True)
+
+    def test_install_plan_rejects_live_media_and_mounted_targets(self):
+        inventory = self.sample_inventory()
+        inventory["disks"][0]["partitions"][0]["mountpoints"] = ["/run/live/medium"]
+        with self.assertRaisesRegex(ValueError, "live installation medium"):
+            PREFLIGHT.build_install_plan(inventory, "/dev/testp3", "/dev/testp1", confirm_format=True)
+
+        inventory = self.sample_inventory()
+        inventory["disks"][0]["partitions"][2]["mountpoints"] = ["/media/data"]
+        with self.assertRaisesRegex(ValueError, "Mounted partitions"):
+            PREFLIGHT.build_install_plan(inventory, "/dev/testp3", "/dev/testp1", confirm_format=True)
+
+    def test_install_plan_rejects_unscanned_systems(self):
+        inventory = self.sample_inventory()
+        inventory["os_probe"]["status"] = "requires_installer_privileges"
+        with self.assertRaisesRegex(ValueError, "were not scanned"):
+            PREFLIGHT.build_install_plan(inventory, "/dev/testp3", "/dev/testp1", confirm_format=True)
 
 
 if __name__ == "__main__":
