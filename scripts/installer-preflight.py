@@ -2,6 +2,7 @@
 """Read-only storage and firmware inventory for the future installer."""
 import argparse
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -12,6 +13,45 @@ EFI_SYSTEM_GUID = "c12a7328-f81f-11d2-ba4b-00a0c93ec93b"
 def probe_installed_systems():
     # os-prober scans every visible disk and may mount partitions; never run it from the desktop.
     return {"status": "not_implemented_safe_scan", "systems": []}
+
+
+def inspect_disk_image(image_path, run=subprocess.run):
+    image = Path(image_path)
+    if image.is_symlink() or not image.is_file():
+        raise ValueError("Disk image must be an existing regular file, not a symlink or device")
+    if not os.access(image, os.R_OK):
+        raise ValueError("Disk image is not readable")
+    result = run(
+        ["sfdisk", "--json", str(image)],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    if result.returncode:
+        raise ValueError(f"Cannot read partition table: {result.stderr.strip()}")
+    data = json.loads(result.stdout)
+    table = data.get("partitiontable")
+    if not isinstance(table, dict):
+        raise ValueError("Partition table data is missing")
+    return {
+        "read_only": True,
+        "image": str(image.resolve()),
+        "label": table.get("label"),
+        "sector_size": table.get("sectorsize"),
+        "partitions": [
+            {
+                "path": part.get("node"),
+                "start_sector": part.get("start"),
+                "size_sectors": part.get("size"),
+                "type": part.get("type"),
+                "uuid": part.get("uuid"),
+            }
+            for part in table.get("partitions", [])
+        ],
+        "os_detection": "not_performed",
+        "warning": "Partition metadata only; filesystems were not mounted and installed operating systems were not identified.",
+    }
 
 
 def build_install_plan(inventory, target_partition, efi_partition, confirm_format=False):
@@ -217,6 +257,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Read-only Localzet installer preflight")
     parser.add_argument("--plan-target", help="partition to include in a preview-only install plan")
     parser.add_argument("--plan-efi", help="existing EFI System Partition to preserve")
+    parser.add_argument("--image", help="read-only inspect a regular disk image without mounting it")
     parser.add_argument(
         "--include-format-in-preview",
         action="store_true",
@@ -224,6 +265,9 @@ def main(argv=None):
     )
     args = parser.parse_args(argv)
     try:
+        if args.image:
+            print(json.dumps(inspect_disk_image(args.image), ensure_ascii=False, indent=2))
+            return 0
         inventory = collect_inventory()
         if args.plan_target or args.plan_efi or args.include_format_in_preview:
             if not args.plan_target or not args.plan_efi:

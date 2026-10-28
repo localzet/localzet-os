@@ -1,6 +1,8 @@
 import importlib.util
 import json
 from pathlib import Path
+import shutil
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import Mock
@@ -103,6 +105,34 @@ class InstallerPreflightTests(unittest.TestCase):
         result = PREFLIGHT.probe_installed_systems()
         runner.assert_not_called()
         self.assertEqual(result["status"], "not_implemented_safe_scan")
+
+    @unittest.skipUnless(shutil.which("sfdisk"), "sfdisk is required for the image integration test")
+    def test_disk_image_inspection_reads_gpt_without_mounting(self):
+        with tempfile.TemporaryDirectory() as directory:
+            image = Path(directory) / "fixture.img"
+            with image.open("wb") as stream:
+                stream.truncate(64 * 1024 * 1024)
+            subprocess.run(
+                ["sfdisk", str(image)],
+                input="label: gpt\nunit: sectors\n\n,32768,L\n",
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            result = PREFLIGHT.inspect_disk_image(image)
+        self.assertTrue(result["read_only"])
+        self.assertEqual(result["label"], "gpt")
+        self.assertEqual(len(result["partitions"]), 1)
+        self.assertEqual(result["os_detection"], "not_performed")
+
+    def test_disk_image_inspection_rejects_symlink(self):
+        with tempfile.TemporaryDirectory() as directory:
+            image = Path(directory) / "image.img"
+            image.touch()
+            link = Path(directory) / "link.img"
+            link.symlink_to(image)
+            with self.assertRaisesRegex(ValueError, "not a symlink"):
+                PREFLIGHT.inspect_disk_image(link)
 
     def test_install_plan_preserves_os_and_efi_and_cannot_execute(self):
         plan = PREFLIGHT.build_install_plan(

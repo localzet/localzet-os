@@ -43,3 +43,4 @@ class LiveBuilderContract(unittest.TestCase):
     def test_unsafe_os_prober_is_not_installed_in_live_image(self):
         source = (ROOT / "scripts/build-localzet-live.sh").read_text()
         self.assertNotIn("python3 os-prober", source)
+        self.assertIn("python3 util-linux", source)
