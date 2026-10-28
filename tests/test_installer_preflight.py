@@ -211,6 +211,27 @@ class InstallerPreflightTests(unittest.TestCase):
                 PREFLIGHT.inspect_disk_image(image, run=runner)
         runner.assert_called_once()
 
+    def test_guestfs_xml_reports_os_details_without_inferencing_from_filesystem(self):
+        runner = Mock(return_value=SimpleNamespace(
+            returncode=0,
+            stderr="",
+            stdout=(
+                "<operatingsystems><operatingsystem><name>linux</name>"
+                "<distro>ubuntu</distro><product_name>Ubuntu 24.04 LTS</product_name>"
+                "<major_version>24</major_version><minor_version>04</minor_version>"
+                "<arch>x86_64</arch><root>/dev/sda3</root>"
+                "</operatingsystem></operatingsystems>"
+            ),
+        ))
+        with tempfile.TemporaryDirectory() as directory:
+            image = Path(directory) / "image.img"
+            image.touch()
+            result = PREFLIGHT.inspect_image_operating_systems(image, run=runner)
+        self.assertEqual(result["status"], "complete")
+        self.assertEqual(result["systems"][0]["distro"], "ubuntu")
+        self.assertEqual(result["systems"][0]["root_device"], "/dev/sda3")
+        self.assertIn("--format=raw", runner.call_args.args[0])
+
     def test_install_plan_preserves_os_and_efi_and_cannot_execute(self):
         plan = PREFLIGHT.build_install_plan(
             self.sample_inventory(), "/dev/testp3", "/dev/testp1", confirm_format=True

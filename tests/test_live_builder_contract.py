@@ -45,3 +45,4 @@ class LiveBuilderContract(unittest.TestCase):
         self.assertNotIn("python3 os-prober", source)
         self.assertIn("python3 util-linux", source)
         self.assertIn("python3 util-linux mtools", source)
+        self.assertIn("mtools libguestfs-tools", source)

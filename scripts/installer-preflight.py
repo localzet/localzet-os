@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 
 EFI_SYSTEM_GUID = "c12a7328-f81f-11d2-ba4b-00a0c93ec93b"
 
@@ -96,6 +97,44 @@ def inspect_disk_image(image_path, run=subprocess.run):
         "os_detection": "efi_bootloader_evidence_only",
         "warning": "Partition tables and filesystem signatures were read without mounting. EFI files are evidence only and do not prove an operating system is installed or bootable.",
     }
+
+
+def inspect_image_operating_systems(image_path, run=subprocess.run):
+    image = Path(image_path)
+    if image.is_symlink() or not image.is_file():
+        raise ValueError("Disk image must be an existing regular file, not a symlink or device")
+    result = run(
+        [
+            "virt-inspector", "--format=raw", "--no-applications", "--no-icon",
+            "--add", str(image),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=180,
+    )
+    if result.returncode:
+        return {
+            "status": "error",
+            "systems": [],
+            "error": result.stderr.strip() or "virt-inspector failed",
+        }
+    try:
+        document = ET.fromstring(result.stdout)
+    except ET.ParseError as error:
+        raise ValueError("virt-inspector returned invalid XML") from error
+    systems = []
+    for os_node in document.findall("operatingsystem"):
+        systems.append({
+            "type": os_node.findtext("name"),
+            "distro": os_node.findtext("distro"),
+            "product_name": os_node.findtext("product_name"),
+            "major_version": os_node.findtext("major_version"),
+            "minor_version": os_node.findtext("minor_version"),
+            "architecture": os_node.findtext("arch"),
+            "root_device": os_node.findtext("root"),
+        })
+    return {"status": "complete" if systems else "none_found", "systems": systems}
 
 
 def build_install_plan(inventory, target_partition, efi_partition, confirm_format=False):
@@ -303,6 +342,11 @@ def main(argv=None):
     parser.add_argument("--plan-efi", help="existing EFI System Partition to preserve")
     parser.add_argument("--image", help="read-only inspect a regular disk image without mounting it")
     parser.add_argument(
+        "--inspect-os",
+        action="store_true",
+        help="identify operating systems in --image using read-only libguestfs inspection",
+    )
+    parser.add_argument(
         "--include-format-in-preview",
         action="store_true",
         help="explicitly include formatting the selected target in the preview; performs no writes",
@@ -310,8 +354,13 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         if args.image:
-            print(json.dumps(inspect_disk_image(args.image), ensure_ascii=False, indent=2))
+            report = inspect_disk_image(args.image)
+            if args.inspect_os:
+                report["operating_systems"] = inspect_image_operating_systems(args.image)
+            print(json.dumps(report, ensure_ascii=False, indent=2))
             return 0
+        if args.inspect_os:
+            raise ValueError("--inspect-os requires --image")
         inventory = collect_inventory()
         if args.plan_target or args.plan_efi or args.include_format_in_preview:
             if not args.plan_target or not args.plan_efi:
