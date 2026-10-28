@@ -44,3 +44,4 @@ class LiveBuilderContract(unittest.TestCase):
         source = (ROOT / "scripts/build-localzet-live.sh").read_text()
         self.assertNotIn("python3 os-prober", source)
         self.assertIn("python3 util-linux", source)
+        self.assertIn("python3 util-linux mtools", source)

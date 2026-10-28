@@ -135,7 +135,56 @@ class InstallerPreflightTests(unittest.TestCase):
         self.assertEqual(len(result["partitions"]), 1)
         self.assertEqual(result["partitions"][0]["filesystem"], "ext4")
         self.assertEqual(result["partitions"][0]["filesystem_label"], "UbuntuTest")
-        self.assertEqual(result["os_detection"], "not_performed")
+        self.assertEqual(result["os_detection"], "efi_bootloader_evidence_only")
+
+    @unittest.skipUnless(
+        shutil.which("sfdisk") and shutil.which("blkid") and shutil.which("mkfs.vfat")
+        and shutil.which("mmd") and shutil.which("mcopy"),
+        "sfdisk, blkid, mtools, and mkfs.vfat are required for the EFI image test",
+    )
+    def test_disk_image_reports_efi_bootloader_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            image = root / "fixture.img"
+            esp = root / "esp.img"
+            marker = root / "bootmgfw.efi"
+            ubuntu_marker = root / "shimx64.efi"
+            image.write_bytes(bytes(64 * 1024 * 1024))
+            with esp.open("wb") as stream:
+                stream.truncate(16 * 1024 * 1024)
+            marker.write_bytes(b"test efi marker")
+            ubuntu_marker.write_bytes(b"test ubuntu efi marker")
+            subprocess.run(
+                ["sfdisk", str(image)],
+                input=("label: gpt\nunit: sectors\n\n"
+                       ",32768,C12A7328-F81F-11D2-BA4B-00A0C93EC93B\n"),
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            subprocess.run(["mkfs.vfat", "-F", "16", str(esp)], check=True, capture_output=True)
+            for path in ("::/EFI", "::/EFI/Microsoft", "::/EFI/Microsoft/Boot", "::/EFI/ubuntu"):
+                subprocess.run(["mmd", "-i", str(esp), path], check=True, capture_output=True)
+            subprocess.run(
+                ["mcopy", "-i", str(esp), str(marker), "::/EFI/Microsoft/Boot/bootmgfw.efi"],
+                check=True,
+                capture_output=True,
+            )
+            subprocess.run(
+                ["mcopy", "-i", str(esp), str(ubuntu_marker), "::/EFI/ubuntu/shimx64.efi"],
+                check=True,
+                capture_output=True,
+            )
+            with image.open("r+b") as target, esp.open("rb") as source:
+                target.seek(1024 * 1024)
+                target.write(source.read())
+            result = PREFLIGHT.inspect_disk_image(image)
+        self.assertEqual(result["partitions"][0]["filesystem"], "vfat")
+        self.assertEqual(
+            result["partitions"][0]["efi_bootloader_evidence"],
+            ["Windows Boot Manager", "Ubuntu EFI bootloader"],
+        )
+        self.assertEqual(result["os_detection"], "efi_bootloader_evidence_only")
 
     def test_disk_image_inspection_rejects_symlink(self):
         with tempfile.TemporaryDirectory() as directory:

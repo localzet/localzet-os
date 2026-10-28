@@ -26,7 +26,7 @@ network-manager network-manager-gnome dbus-user-session dbus-x11
 pipewire pipewire-pulse wireplumber pavucontrol
 lxqt-policykit fonts-dejavu-core fonts-noto-core
 xserver-xorg-input-libinput mesa-utils firmware-linux-free
-sudo curl ca-certificates bash zsh git python3 util-linux wine wine64 xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk
+sudo curl ca-certificates bash zsh git python3 util-linux mtools wine wine64 xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk
 build-essential pkg-config libgtk-4-dev libgtk4-layer-shell-dev rustc cargo librsvg2-bin
 PACKAGES
 rsync -a --exclude out --exclude iso-build --exclude iso-artifact --exclude qemu-smoke --exclude target --exclude .git --exclude __pycache__ --exclude "*.pyc" "$ROOT/" config/includes.chroot/opt/localzet-os/

@@ -60,6 +60,22 @@ def inspect_disk_image(image_path, run=subprocess.run):
         metadata = dict(
             line.split("=", 1) for line in probe.stdout.splitlines() if "=" in line
         ) if probe.returncode == 0 else {}
+        bootloaders = []
+        if metadata.get("TYPE") in ("vfat", "fat", "fat32"):
+            for label, efi_path in (
+                ("Windows Boot Manager", "::/EFI/Microsoft/Boot/bootmgfw.efi"),
+                ("Ubuntu EFI bootloader", "::/EFI/ubuntu/shimx64.efi"),
+                ("Ubuntu GRUB bootloader", "::/EFI/ubuntu/grubx64.efi"),
+            ):
+                listing = run(
+                    ["mdir", "-i", f"{image}@@{offset}", efi_path],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                if listing.returncode == 0:
+                    bootloaders.append(label)
         partitions.append({
             "path": part.get("node"),
             "start_sector": start,
@@ -69,6 +85,7 @@ def inspect_disk_image(image_path, run=subprocess.run):
             "filesystem": metadata.get("TYPE"),
             "filesystem_uuid": metadata.get("UUID"),
             "filesystem_label": metadata.get("LABEL"),
+            "efi_bootloader_evidence": bootloaders,
         })
     return {
         "read_only": True,
@@ -76,8 +93,8 @@ def inspect_disk_image(image_path, run=subprocess.run):
         "label": table.get("label"),
         "sector_size": sector_size,
         "partitions": partitions,
-        "os_detection": "not_performed",
-        "warning": "Partition tables and filesystem signatures were read without mounting; installed operating systems were not identified.",
+        "os_detection": "efi_bootloader_evidence_only",
+        "warning": "Partition tables and filesystem signatures were read without mounting. EFI files are evidence only and do not prove an operating system is installed or bootable.",
     }
 
 
