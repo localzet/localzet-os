@@ -79,14 +79,10 @@ with log.open('wb') as stream:
                     monitor.connect(str(monitor_socket))
                     monitor.recv(4096)
                     monitor.sendall(f"screendump {screenshot}\n".encode())
-                    response = monitor.recv(4096)
-                    if screenshot.is_file():
-                        from validate_qemu_screen import is_valid_ppm
-                        screen_captured = is_valid_ppm(screenshot)
-                        if not screen_captured:
-                            print('QEMU screendump is missing or invalid', file=sys.stderr)
-                    else:
-                        print(f'QEMU screendump failed: {response!r}', file=sys.stderr)
+                    from validate_qemu_screen import wait_for_valid_ppm
+                    screen_captured = wait_for_valid_ppm(screenshot)
+                    if not screen_captured:
+                        print('QEMU screendump is missing or invalid', file=sys.stderr)
                 time.sleep(2)
             except (OSError, TimeoutError) as error:
                 print(f"QEMU screenshot capture failed: {error}", file=sys.stderr)
