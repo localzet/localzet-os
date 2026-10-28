@@ -12,3 +12,9 @@ class AlphaBootWiring(unittest.TestCase):
         script = (ROOT / 'scripts/alpha-build-and-test.sh').read_text()
         for name in ('build-localzet-live.sh', 'qemu-graphical-smoke.sh', 'release-gate.sh'):
             self.assertIn(name, script)
+
+    def test_independent_retest_uses_current_build_artifact(self):
+        workflow = (ROOT / '.github/workflows/alpha5-qemu-retest.yml').read_text()
+        self.assertIn('workflows: [Alpha 5 ISO build and QEMU boot]', workflow)
+        self.assertIn('github.event.workflow_run.id || inputs.source_run_id', workflow)
+        self.assertNotIn('38389200044', workflow)

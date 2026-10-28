@@ -1,15 +1,13 @@
 name: Retest existing Alpha 5 ISO in QEMU
 on:
-  push:
-    paths:
-      - .github/workflows/alpha5-qemu-retest.yml
-      - scripts/qemu-graphical-smoke.sh
+  workflow_run:
+    workflows: [Alpha 5 ISO build and QEMU boot]
+    types: [completed]
   workflow_dispatch:
     inputs:
       source_run_id:
-        description: 'Successful ISO artifact source workflow run ID'
+        description: 'ISO artifact source workflow run ID'
         required: true
-        default: '38389200044'
 permissions:
   actions: read
   contents: read
@@ -28,7 +26,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: localzet-alpha5-iso
-          run-id: ${{ inputs.source_run_id || '38389200044' }}
+          run-id: ${{ github.event.workflow_run.id || inputs.source_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: retest-iso
       - name: Verify ISO checksum
