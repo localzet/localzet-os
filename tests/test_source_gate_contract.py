@@ -13,6 +13,7 @@ class SourceGateContract(unittest.TestCase):
             "packaging/session/labwc/autostart",
             "packaging/systemd/localzetd.service",
             "packaging/applications/localzet-desktop.desktop",
+            "scripts/installer-preflight.py",
             "scripts/qemu-graphical-smoke.sh",
             "scripts/validate-iso.sh",
         ):

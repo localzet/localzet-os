@@ -20,6 +20,7 @@ for required in \
   packaging/session/waybar/style.css \
   packaging/systemd/localzetd.service \
   packaging/applications/localzet-desktop.desktop \
+  scripts/installer-preflight.py \
   scripts/qemu-graphical-smoke.sh \
   scripts/validate-iso.sh \
   scripts/verify-release.sh; do
