@@ -23,7 +23,7 @@ jobs:
       - name: Install QEMU
         run: apt-get update && apt-get install -y qemu-system-x86 python3 ca-certificates
       - name: Download previously built ISO
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: localzet-alpha5-iso
           run-id: ${{ github.event.workflow_run.id || inputs.source_run_id }}
