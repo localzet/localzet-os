@@ -1,4 +1,6 @@
 import importlib.util
+from contextlib import redirect_stdout
+import io
 import json
 from pathlib import Path
 import shutil
@@ -6,7 +8,7 @@ import subprocess
 import tempfile
 import unittest
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parent.parent
 SPEC = importlib.util.spec_from_file_location(
@@ -135,7 +137,7 @@ class InstallerPreflightTests(unittest.TestCase):
         self.assertEqual(len(result["partitions"]), 1)
         self.assertEqual(result["partitions"][0]["filesystem"], "ext4")
         self.assertEqual(result["partitions"][0]["filesystem_label"], "UbuntuTest")
-        self.assertEqual(result["os_detection"], "efi_bootloader_evidence_only")
+        self.assertEqual(result["os_detection"], "not_performed")
 
     @unittest.skipUnless(
         shutil.which("sfdisk") and shutil.which("blkid") and shutil.which("mkfs.vfat")
@@ -184,7 +186,7 @@ class InstallerPreflightTests(unittest.TestCase):
             result["partitions"][0]["efi_bootloader_evidence"],
             ["Windows Boot Manager", "Ubuntu EFI bootloader"],
         )
-        self.assertEqual(result["os_detection"], "efi_bootloader_evidence_only")
+        self.assertEqual(result["os_detection"], "not_performed")
 
     def test_disk_image_inspection_rejects_symlink(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -231,6 +233,21 @@ class InstallerPreflightTests(unittest.TestCase):
         self.assertEqual(result["systems"][0]["distro"], "ubuntu")
         self.assertEqual(result["systems"][0]["root_device"], "/dev/sda3")
         self.assertIn("--format=raw", runner.call_args.args[0])
+
+    def test_cli_marks_os_scan_result_separately_from_efi_file_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            image = Path(directory) / "image.img"
+            image.touch()
+            output = io.StringIO()
+            with patch.object(PREFLIGHT, "inspect_disk_image", return_value={
+                "read_only": True, "os_detection": "not_performed",
+            }), patch.object(PREFLIGHT, "inspect_image_operating_systems", return_value={
+                "status": "complete", "systems": [{"distro": "ubuntu"}],
+            }), redirect_stdout(output):
+                status = PREFLIGHT.main(["--image", str(image), "--inspect-os"])
+        report = json.loads(output.getvalue())
+        self.assertEqual(status, 0)
+        self.assertEqual(report["os_detection"], "complete")
 
     def test_install_plan_preserves_os_and_efi_and_cannot_execute(self):
         plan = PREFLIGHT.build_install_plan(

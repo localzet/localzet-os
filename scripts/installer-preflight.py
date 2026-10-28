@@ -94,7 +94,7 @@ def inspect_disk_image(image_path, run=subprocess.run):
         "label": table.get("label"),
         "sector_size": sector_size,
         "partitions": partitions,
-        "os_detection": "efi_bootloader_evidence_only",
+        "os_detection": "not_performed",
         "warning": "Partition tables and filesystem signatures were read without mounting. EFI files are evidence only and do not prove an operating system is installed or bootable.",
     }
 
@@ -357,6 +357,7 @@ def main(argv=None):
             report = inspect_disk_image(args.image)
             if args.inspect_os:
                 report["operating_systems"] = inspect_image_operating_systems(args.image)
+                report["os_detection"] = report["operating_systems"]["status"]
             print(json.dumps(report, ensure_ascii=False, indent=2))
             return 0
         if args.inspect_os:
