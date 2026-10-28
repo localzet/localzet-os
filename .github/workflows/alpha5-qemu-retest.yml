@@ -19,7 +19,7 @@ jobs:
       options: --privileged
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install QEMU
         run: apt-get update && apt-get install -y qemu-system-x86 python3 ca-certificates
       - name: Download previously built ISO
