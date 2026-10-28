@@ -23,6 +23,7 @@ class DesktopBootEvidence(unittest.TestCase):
         self.assertIn("verified': ready and screen_captured", source)
         self.assertIn("screen_captured", source)
         self.assertIn("wait_for_valid_ppm(screenshot)", source)
+        self.assertIn("Path(sys.argv[3]) / 'scripts'", source)
 
     def test_screenshot_validator_rejects_missing_and_truncated_frames(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -20,7 +20,7 @@ import time
 
 iso = Path(sys.argv[1]).resolve()
 out = Path(sys.argv[2]).resolve()
-sys.path.insert(0, sys.argv[3])
+sys.path.insert(0, str(Path(sys.argv[3]) / 'scripts'))
 log = out / 'serial.log'
 report_path = out / 'boot-report.json'
 monitor_socket = out / 'qemu-monitor.sock'
