@@ -5,6 +5,11 @@ import unittest
 ROOT = Path(__file__).resolve().parent.parent
 
 class LiveBuilderContract(unittest.TestCase):
+    def test_iso_validator_uses_supported_xorriso_find_action(self):
+        source = (ROOT / "scripts/validate-iso.sh").read_text()
+        self.assertIn("-find / -name filesystem.squashfs -exec lsdl", source)
+        self.assertNotIn("-find / -name filesystem.squashfs -print", source)
+
     def test_required_desktop_packages(self):
         source = (ROOT / "scripts/build-localzet-live.sh").read_text()
         for name in ("labwc", "lightdm", "waybar", "wofi", "foot", "thunar", "libgtk4-layer-shell-dev"):

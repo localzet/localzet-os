@@ -8,7 +8,7 @@ for cmd in file sha256sum; do command -v "$cmd" >/dev/null || exit 2; done
 mime="$(file -b "$ISO")"
 case "$mime" in *ISO\ 9660*|*ISO-9660*) ;; *) echo "FAIL: not ISO9660: $mime" >&2; exit 3;; esac
 if command -v xorriso >/dev/null; then
-  xorriso -indev "$ISO" -find / -name filesystem.squashfs -print 2>/dev/null | grep -q filesystem.squashfs || { echo 'FAIL: squashfs missing' >&2; exit 4; }
+  xorriso -indev "$ISO" -find / -name filesystem.squashfs -exec lsdl 2>/dev/null | grep -q filesystem.squashfs || { echo 'FAIL: squashfs missing' >&2; exit 4; }
 else
   echo 'WARN: xorriso missing; filesystem contents not inspected' >&2
 fi
