@@ -3,7 +3,6 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from types import SimpleNamespace
 from unittest.mock import Mock
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -99,26 +98,11 @@ class InstallerPreflightTests(unittest.TestCase):
         self.assertIn("Установленные системы", report)
         self.assertIn("Накопители не обнаружены", report)
 
-    def test_os_probe_requires_privileged_installer_context(self):
+    def test_os_probe_is_disabled_until_a_safe_scanner_exists(self):
         runner = Mock()
-        result = PREFLIGHT.probe_installed_systems(runner, effective_uid=1000)
+        result = PREFLIGHT.probe_installed_systems()
         runner.assert_not_called()
-        self.assertEqual(result["status"], "requires_installer_privileges")
-
-    def test_os_probe_parses_windows_and_ubuntu_records(self):
-        runner = Mock(return_value=SimpleNamespace(
-            returncode=0,
-            stderr="",
-            stdout=(
-                "/dev/nvme0n1p2:Windows Boot Manager:Windows:efi\n"
-                "/dev/nvme0n1p5:Ubuntu 24.04 LTS:Ubuntu:linux\n"
-            ),
-        ))
-        result = PREFLIGHT.probe_installed_systems(runner, effective_uid=0)
-        self.assertEqual(result["status"], "complete")
-        self.assertEqual([system["family"] for system in result["systems"]], ["Windows", "Ubuntu"])
-        self.assertEqual(runner.call_args.args[0], ["os-prober"])
-        self.assertEqual(runner.call_args.kwargs["timeout"], 45)
+        self.assertEqual(result["status"], "not_implemented_safe_scan")
 
     def test_install_plan_preserves_os_and_efi_and_cannot_execute(self):
         plan = PREFLIGHT.build_install_plan(
@@ -155,7 +139,7 @@ class InstallerPreflightTests(unittest.TestCase):
 
     def test_install_plan_rejects_unscanned_systems(self):
         inventory = self.sample_inventory()
-        inventory["os_probe"]["status"] = "requires_installer_privileges"
+        inventory["os_probe"]["status"] = "not_implemented_safe_scan"
         with self.assertRaisesRegex(ValueError, "were not scanned"):
             PREFLIGHT.build_install_plan(inventory, "/dev/testp3", "/dev/testp1", confirm_format=True)
 

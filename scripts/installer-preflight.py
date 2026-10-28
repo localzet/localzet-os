@@ -2,7 +2,6 @@
 """Read-only storage and firmware inventory for the future installer."""
 import argparse
 import json
-import os
 from pathlib import Path
 import subprocess
 import sys
@@ -10,39 +9,9 @@ import sys
 EFI_SYSTEM_GUID = "c12a7328-f81f-11d2-ba4b-00a0c93ec93b"
 
 
-def probe_installed_systems(run=subprocess.run, effective_uid=None):
-    if effective_uid is None:
-        effective_uid = os.geteuid()
-    if effective_uid != 0:
-        return {"status": "requires_installer_privileges", "systems": []}
-    try:
-        result = run(
-            ["os-prober"],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=45,
-            env={"LC_ALL": "C", "PATH": "/usr/sbin:/usr/bin:/sbin:/bin"},
-        )
-    except FileNotFoundError:
-        return {"status": "unavailable", "systems": []}
-    except subprocess.TimeoutExpired:
-        return {"status": "timeout", "systems": []}
-    if result.returncode not in (0, 1) or (result.returncode == 1 and result.stderr.strip()):
-        return {"status": "error", "systems": []}
-
-    systems = []
-    for line in result.stdout.splitlines():
-        fields = line.split(":", 3)
-        if len(fields) != 4 or not fields[0].startswith("/dev/"):
-            continue
-        systems.append({
-            "partition": fields[0],
-            "name": fields[1],
-            "family": fields[2],
-            "boot_method": fields[3],
-        })
-    return {"status": "complete" if systems else "none_found", "systems": systems}
+def probe_installed_systems():
+    # os-prober scans every visible disk and may mount partitions; never run it from the desktop.
+    return {"status": "not_implemented_safe_scan", "systems": []}
 
 
 def build_install_plan(inventory, target_partition, efi_partition, confirm_format=False):
@@ -112,7 +81,7 @@ def build_install_plan(inventory, target_partition, efi_partition, confirm_forma
     }
 
 
-def collect_inventory(run=subprocess.run, sys_root=Path("/sys"), effective_uid=None):
+def collect_inventory(run=subprocess.run, sys_root=Path("/sys")):
     result = run(
         [
             "lsblk", "--json", "--bytes", "--paths", "--output",
@@ -182,7 +151,7 @@ def collect_inventory(run=subprocess.run, sys_root=Path("/sys"), effective_uid=N
         "intel_vmd_controllers": controller_ids,
         "disks": disks,
         "complex_devices": complex_devices,
-        "os_probe": probe_installed_systems(run, effective_uid),
+        "os_probe": probe_installed_systems(),
     }
 
 
@@ -225,8 +194,8 @@ def format_report(inventory):
             )
     os_probe = inventory.get("os_probe", {"status": "unavailable", "systems": []})
     lines.append("\nУстановленные системы:")
-    if os_probe["status"] == "requires_installer_privileges":
-        lines.append("  Сканирование не запускалось: нужен привилегированный контекст установщика; текущий рабочий стол его не предоставляет.")
+    if os_probe["status"] == "not_implemented_safe_scan":
+        lines.append("  Сканирование не выполнялось: безопасный ограниченный режим установщика ещё не реализован.")
     elif os_probe["status"] == "complete":
         for system in os_probe["systems"]:
             lines.append(
@@ -238,8 +207,7 @@ def format_report(inventory):
         lines.append(f"  Не удалось выполнить сканирование: {os_probe['status']}.")
     lines.extend([
         "",
-        "План установки пока не исполняется; preview доступен только отдельной командой и требует проверки ОС.",
-        "Сканер ОС использует os-prober только из привилегированного контекста установщика.",
+        "План установки пока не исполняется; preview требует безопасного обнаружения ОС.",
         "Не меняйте режим Intel RST/VMD в UEFI: сначала нужно подтвердить поддержку контроллера и массивов.",
     ])
     return "\n".join(lines)

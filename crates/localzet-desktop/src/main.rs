@@ -136,8 +136,8 @@ fn main() {
         inventory.set_editable(false);
         inventory.set_cursor_visible(false);
         inventory.set_monospace(true);
-        inventory.buffer().set_text("Проверка только читает сведения о дисках. Обнаружение ОС доступно в отдельном контексте установщика.");
-        let scan = Button::with_label("Проверить диски и установленные ОС (без записи)");
+        inventory.buffer().set_text("Проверка только читает сведения о дисках. Безопасное обнаружение установленных ОС и установщик ещё не реализованы.");
+        let scan = Button::with_label("Проверить диски (без записи)");
         let inventory_copy = inventory.clone();
         scan.connect_clicked(move |_| scan_storage(inventory_copy.clone()));
         root.append(&scan);

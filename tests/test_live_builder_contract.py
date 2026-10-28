@@ -40,6 +40,6 @@ class LiveBuilderContract(unittest.TestCase):
         self.assertTrue((ROOT / "Cargo.lock").is_file())
         self.assertIn("cargo build --release --workspace --locked", source)
 
-    def test_installer_os_probe_is_available_in_live_image(self):
+    def test_unsafe_os_prober_is_not_installed_in_live_image(self):
         source = (ROOT / "scripts/build-localzet-live.sh").read_text()
-        self.assertIn("python3 os-prober", source)
+        self.assertNotIn("python3 os-prober", source)
