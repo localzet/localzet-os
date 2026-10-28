@@ -34,23 +34,50 @@ def inspect_disk_image(image_path, run=subprocess.run):
     table = data.get("partitiontable")
     if not isinstance(table, dict):
         raise ValueError("Partition table data is missing")
+    sector_size = table.get("sectorsize")
+    if not isinstance(sector_size, int) or sector_size <= 0:
+        raise ValueError("Partition table has an invalid sector size")
+    image_size = image.stat().st_size
+    partitions = []
+    for part in table.get("partitions", []):
+        start = part.get("start")
+        size = part.get("size")
+        if not isinstance(start, int) or not isinstance(size, int) or start < 0 or size <= 0:
+            raise ValueError("Partition table has invalid partition bounds")
+        offset = start * sector_size
+        length = size * sector_size
+        if offset + length > image_size:
+            raise ValueError("Partition extends beyond the disk image")
+        probe = run(
+            ["blkid", "-p", "-o", "export", "-O", str(offset), "-S", str(length), str(image)],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        if probe.returncode not in (0, 2):
+            raise ValueError(f"Cannot probe partition filesystem: {probe.stderr.strip()}")
+        metadata = dict(
+            line.split("=", 1) for line in probe.stdout.splitlines() if "=" in line
+        ) if probe.returncode == 0 else {}
+        partitions.append({
+            "path": part.get("node"),
+            "start_sector": start,
+            "size_sectors": size,
+            "type": part.get("type"),
+            "uuid": part.get("uuid"),
+            "filesystem": metadata.get("TYPE"),
+            "filesystem_uuid": metadata.get("UUID"),
+            "filesystem_label": metadata.get("LABEL"),
+        })
     return {
         "read_only": True,
         "image": str(image.resolve()),
         "label": table.get("label"),
-        "sector_size": table.get("sectorsize"),
-        "partitions": [
-            {
-                "path": part.get("node"),
-                "start_sector": part.get("start"),
-                "size_sectors": part.get("size"),
-                "type": part.get("type"),
-                "uuid": part.get("uuid"),
-            }
-            for part in table.get("partitions", [])
-        ],
+        "sector_size": sector_size,
+        "partitions": partitions,
         "os_detection": "not_performed",
-        "warning": "Partition metadata only; filesystems were not mounted and installed operating systems were not identified.",
+        "warning": "Partition tables and filesystem signatures were read without mounting; installed operating systems were not identified.",
     }
 
 

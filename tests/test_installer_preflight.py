@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -106,7 +107,10 @@ class InstallerPreflightTests(unittest.TestCase):
         runner.assert_not_called()
         self.assertEqual(result["status"], "not_implemented_safe_scan")
 
-    @unittest.skipUnless(shutil.which("sfdisk"), "sfdisk is required for the image integration test")
+    @unittest.skipUnless(
+        shutil.which("sfdisk") and shutil.which("blkid") and shutil.which("mkfs.ext4"),
+        "sfdisk, blkid, and mkfs.ext4 are required for the image integration test",
+    )
     def test_disk_image_inspection_reads_gpt_without_mounting(self):
         with tempfile.TemporaryDirectory() as directory:
             image = Path(directory) / "fixture.img"
@@ -119,10 +123,18 @@ class InstallerPreflightTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
             )
+            subprocess.run(
+                ["mkfs.ext4", "-F", "-q", "-L", "UbuntuTest", "-E", "offset=1048576", str(image), "16384"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
             result = PREFLIGHT.inspect_disk_image(image)
         self.assertTrue(result["read_only"])
         self.assertEqual(result["label"], "gpt")
         self.assertEqual(len(result["partitions"]), 1)
+        self.assertEqual(result["partitions"][0]["filesystem"], "ext4")
+        self.assertEqual(result["partitions"][0]["filesystem_label"], "UbuntuTest")
         self.assertEqual(result["os_detection"], "not_performed")
 
     def test_disk_image_inspection_rejects_symlink(self):
@@ -133,6 +145,22 @@ class InstallerPreflightTests(unittest.TestCase):
             link.symlink_to(image)
             with self.assertRaisesRegex(ValueError, "not a symlink"):
                 PREFLIGHT.inspect_disk_image(link)
+
+    def test_disk_image_inspection_rejects_partition_outside_image(self):
+        runner = Mock(return_value=SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps({"partitiontable": {
+                "label": "gpt", "sectorsize": 512,
+                "partitions": [{"start": 200000, "size": 4096}],
+            }}),
+            stderr="",
+        ))
+        with tempfile.TemporaryDirectory() as directory:
+            image = Path(directory) / "image.img"
+            image.write_bytes(bytes(1024))
+            with self.assertRaisesRegex(ValueError, "extends beyond"):
+                PREFLIGHT.inspect_disk_image(image, run=runner)
+        runner.assert_called_once()
 
     def test_install_plan_preserves_os_and_efi_and_cannot_execute(self):
         plan = PREFLIGHT.build_install_plan(
