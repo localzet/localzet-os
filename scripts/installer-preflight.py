@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -14,6 +15,11 @@ EFI_SYSTEM_GUID = "c12a7328-f81f-11d2-ba4b-00a0c93ec93b"
 def probe_installed_systems():
     # os-prober scans every visible disk and may mount partitions; never run it from the desktop.
     return {"status": "not_implemented_safe_scan", "systems": []}
+
+
+def guest_partition_device(node):
+    match = re.search(r"(\d+)$", node or "")
+    return f"/dev/sda{match.group(1)}" if match else None
 
 
 def inspect_disk_image(image_path, run=subprocess.run):
@@ -79,6 +85,7 @@ def inspect_disk_image(image_path, run=subprocess.run):
                     bootloaders.append(label)
         partitions.append({
             "path": part.get("node"),
+            "guest_device": guest_partition_device(part.get("node")),
             "start_sector": start,
             "size_sectors": size,
             "type": part.get("type"),
@@ -135,6 +142,18 @@ def inspect_image_operating_systems(image_path, run=subprocess.run):
             "root_device": os_node.findtext("root"),
         })
     return {"status": "complete" if systems else "none_found", "systems": systems}
+
+
+def bind_operating_system_partitions(report):
+    partitions = {
+        partition["guest_device"]: partition["path"]
+        for partition in report["partitions"]
+        if partition.get("guest_device")
+    }
+    for system in report.get("operating_systems", {}).get("systems", []):
+        root_device = system.get("root_device")
+        system["image_root_partition"] = partitions.get(root_device)
+        system["partition_match"] = "matched" if root_device in partitions else "unmapped"
 
 
 def build_install_plan(inventory, target_partition, efi_partition, confirm_format=False):
@@ -358,6 +377,7 @@ def main(argv=None):
             if args.inspect_os:
                 report["operating_systems"] = inspect_image_operating_systems(args.image)
                 report["os_detection"] = report["operating_systems"]["status"]
+                bind_operating_system_partitions(report)
             print(json.dumps(report, ensure_ascii=False, indent=2))
             return 0
         if args.inspect_os:

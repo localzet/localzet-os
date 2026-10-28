@@ -135,6 +135,7 @@ class InstallerPreflightTests(unittest.TestCase):
         self.assertTrue(result["read_only"])
         self.assertEqual(result["label"], "gpt")
         self.assertEqual(len(result["partitions"]), 1)
+        self.assertEqual(result["partitions"][0]["guest_device"], "/dev/sda1")
         self.assertEqual(result["partitions"][0]["filesystem"], "ext4")
         self.assertEqual(result["partitions"][0]["filesystem_label"], "UbuntuTest")
         self.assertEqual(result["os_detection"], "not_performed")
@@ -222,6 +223,10 @@ class InstallerPreflightTests(unittest.TestCase):
                 "<distro>ubuntu</distro><product_name>Ubuntu 24.04 LTS</product_name>"
                 "<major_version>24</major_version><minor_version>04</minor_version>"
                 "<arch>x86_64</arch><root>/dev/sda3</root>"
+                "</operatingsystem><operatingsystem><name>windows</name>"
+                "<distro>windows</distro><product_name>Windows 11</product_name>"
+                "<major_version>10</major_version><minor_version>0</minor_version>"
+                "<arch>x86_64</arch><root>/dev/sda2</root>"
                 "</operatingsystem></operatingsystems>"
             ),
         ))
@@ -230,9 +235,21 @@ class InstallerPreflightTests(unittest.TestCase):
             image.touch()
             result = PREFLIGHT.inspect_image_operating_systems(image, run=runner)
         self.assertEqual(result["status"], "complete")
-        self.assertEqual(result["systems"][0]["distro"], "ubuntu")
+        self.assertEqual([system["distro"] for system in result["systems"]], ["ubuntu", "windows"])
         self.assertEqual(result["systems"][0]["root_device"], "/dev/sda3")
         self.assertIn("--format=raw", runner.call_args.args[0])
+
+    def test_detected_root_devices_map_to_image_partition_paths(self):
+        report = {
+            "partitions": [
+                {"guest_device": "/dev/sda1", "path": "/tmp/disk.img1"},
+                {"guest_device": "/dev/sda2", "path": "/tmp/disk.img2"},
+            ],
+            "operating_systems": {"systems": [{"root_device": "/dev/sda2"}]},
+        }
+        PREFLIGHT.bind_operating_system_partitions(report)
+        self.assertEqual(report["operating_systems"]["systems"][0]["image_root_partition"], "/tmp/disk.img2")
+        self.assertEqual(report["operating_systems"]["systems"][0]["partition_match"], "matched")
 
     def test_cli_marks_os_scan_result_separately_from_efi_file_evidence(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -240,7 +257,7 @@ class InstallerPreflightTests(unittest.TestCase):
             image.touch()
             output = io.StringIO()
             with patch.object(PREFLIGHT, "inspect_disk_image", return_value={
-                "read_only": True, "os_detection": "not_performed",
+                "read_only": True, "os_detection": "not_performed", "partitions": [],
             }), patch.object(PREFLIGHT, "inspect_image_operating_systems", return_value={
                 "status": "complete", "systems": [{"distro": "ubuntu"}],
             }), redirect_stdout(output):
