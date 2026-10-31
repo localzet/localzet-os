@@ -8,7 +8,7 @@ permissions:
   contents: read
 jobs:
   source:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v4
       - name: Проверка полноты исходников
@@ -18,14 +18,13 @@ jobs:
       - name: Python tests
         run: python3 -m unittest discover -s tests -p 'test_*.py'
   rust:
-    runs-on: ubuntu-24.04
-    container: debian:trixie
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v4
       - name: Source gate
         run: bash scripts/check-source-tree.sh
       - name: GTK dependencies
-        run: apt-get update && apt-get install -y git curl ca-certificates build-essential libgtk-4-dev libgtk4-layer-shell-dev pkg-config
+        run: sudo apt-get update && sudo apt-get install -y git curl ca-certificates build-essential libgtk-4-dev libgtk4-layer-shell-dev pkg-config
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy

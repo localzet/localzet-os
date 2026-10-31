@@ -1,0 +1,7 @@
+{
+  "uuid": "localzet-panel@localzet",
+  "name": "Localzet Panel Layout",
+  "description": "Places application indicators on the left and system indicators on the right.",
+  "shell-version": ["50"],
+  "version": 1
+}

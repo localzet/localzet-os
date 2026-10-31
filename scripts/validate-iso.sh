@@ -2,7 +2,7 @@
 # Static ISO validation; does not prove boot or graphical rendering.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ISO="${1:-$ROOT/out/localzet-live/live-image-amd64.hybrid.iso}"
+ISO="${1:-$ROOT/out/localzet-ubuntu-26.04/live-image-amd64.hybrid.iso}"
 [[ -f "$ISO" && -s "$ISO" ]] || { echo "FAIL: ISO missing or empty: $ISO" >&2; exit 2; }
 for cmd in file sha256sum; do command -v "$cmd" >/dev/null || exit 2; done
 mime="$(file -b "$ISO")"

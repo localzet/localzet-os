@@ -10,20 +10,23 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from validate_qemu_screen import is_valid_ppm, wait_for_valid_ppm
 
 class DesktopBootEvidence(unittest.TestCase):
-    def test_marker_requires_panel(self):
+    def test_marker_requires_stable_gnome_wayland_session(self):
         source = (ROOT / "packaging/session/guest-boot-marker").read_text()
-        self.assertIn("if process_running localzet-panel;", source)
-        self.assertNotIn("process_running localzet-desktop", source)
-        self.assertIn("LOCALZET_GUI_SESSION_READY_V3", source)
+        self.assertIn("process_running gnome-shell", source)
+        self.assertIn('XDG_SESSION_TYPE:-}" == wayland', source)
+        self.assertIn("LOCALZET_GUI_SESSION_READY_V4_GNOME", source)
         self.assertNotIn("LOCALZET_GUI_SESSION_READY_V1", source)
 
     def test_qemu_requires_v3(self):
         source = (ROOT / "scripts/qemu-graphical-smoke.sh").read_text()
-        self.assertIn("LOCALZET_GUI_SESSION_READY_V3", source)
+        self.assertIn("LOCALZET_GUI_SESSION_READY_V4_GNOME", source)
+        self.assertIn("'desktop_shell': 'gnome-shell'", source)
         self.assertIn("verified': ready and screen_captured", source)
         self.assertIn("screen_captured", source)
         self.assertIn("wait_for_valid_ppm(screenshot)", source)
         self.assertIn("Path(sys.argv[3]) / 'scripts'", source)
+        self.assertIn("boot_key_attempts < 6", source)
+        self.assertIn("boot_key_attempts * 5", source)
 
     def test_screenshot_validator_rejects_missing_and_truncated_frames(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -53,10 +56,9 @@ class DesktopBootEvidence(unittest.TestCase):
     def test_release_gate_requires_screenshot(self):
         source = (ROOT / "scripts/release-gate.sh").read_text()
         self.assertIn('data.get("screenshot_captured") is not True', source)
+        self.assertIn('data.get("desktop_shell") != "gnome-shell"', source)
         self.assertIn("is_valid_ppm", source)
 
-    def test_session_logs(self):
-        source = (ROOT / "packaging/session/labwc/autostart").read_text()
-        self.assertIn("panel.log", source)
-        self.assertNotIn("desktop.log", source)
-        self.assertNotIn("localzet-desktop >", source)
+    def test_gnome_autostart_starts_the_readiness_probe(self):
+        source = (ROOT / "packaging/gnome/autostart/localzet-guest-boot-marker.desktop").read_text()
+        self.assertIn("Exec=/usr/local/bin/localzet-guest-boot-marker", source)

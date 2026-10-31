@@ -1,4 +1,4 @@
-name: Localzet Surface checks
+name: Localzet GNOME surface checks
 
 on:
   push:
@@ -6,31 +6,27 @@ on:
       - 'Cargo.toml'
       - 'Cargo.lock'
       - 'crates/**'
-      - 'packaging/session/labwc/**'
-      - 'scripts/check-surface-alpha5.sh'
+      - 'packaging/gnome/**'
+      - 'packaging/applications/**'
+      - 'scripts/build-localzet-live.sh'
       - '.github/workflows/surface-check.yml'
   pull_request:
 
 jobs:
   rust-and-session:
-    runs-on: ubuntu-24.04
-    container: debian:trixie
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v4
       - name: Install GTK4 and layer-shell development libraries
         run: |
-          apt-get update
-          apt-get install -y git ca-certificates curl python3 bash pkg-config build-essential libgtk-4-dev libgtk4-layer-shell-dev
+          sudo apt-get update
+          sudo apt-get install -y git ca-certificates curl python3 bash pkg-config build-essential libgtk-4-dev libgtk4-layer-shell-dev
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
-      - name: Validate session scripts
+      - name: Validate GNOME packaging
         run: |
-          bash -n scripts/check-surface-alpha5.sh
-          bash -n packaging/session/labwc/autostart
-          python3 - <<'PY'
-          import xml.etree.ElementTree as ET
-          ET.parse('packaging/session/labwc/rc.xml')
-          PY
+          bash scripts/check-source-tree.sh
+          python3 -m unittest tests.test_live_builder_contract tests.test_desktop_boot_evidence
       - name: Compile workspace
         run: cargo check --locked --workspace

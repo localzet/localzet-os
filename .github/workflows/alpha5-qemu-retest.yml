@@ -1,7 +1,7 @@
-name: Retest existing Alpha 5 ISO in QEMU
+name: Independent Ubuntu 26.04 GNOME ISO QEMU retest
 on:
   workflow_run:
-    workflows: [Alpha 5 ISO build and QEMU boot]
+    workflows: [Ubuntu 26.04 GNOME ISO build and QEMU boot]
     types: [completed]
   workflow_dispatch:
     inputs:
@@ -13,19 +13,16 @@ permissions:
   contents: read
 jobs:
   qemu:
-    runs-on: ubuntu-24.04
-    container:
-      image: debian:trixie
-      options: --privileged
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Install QEMU
-        run: apt-get update && apt-get install -y qemu-system-x86 python3 ca-certificates
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 python3 ca-certificates
       - name: Download previously built ISO
         uses: actions/download-artifact@v4
         with:
-          name: localzet-alpha5-iso
+          name: localzet-ubuntu-26.04-gnome-iso
           run-id: ${{ github.event.workflow_run.id || inputs.source_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: retest-iso
@@ -43,7 +40,7 @@ jobs:
       - name: QEMU graphical smoke
         shell: bash
         env:
-          LOCALZET_QEMU_TIMEOUT: '360'
+          LOCALZET_QEMU_TIMEOUT: '600'
         run: |
           set -euo pipefail
           mapfile -t images < <(find "$GITHUB_WORKSPACE/retest-iso" -maxdepth 1 -type f -name '*.iso')
@@ -69,6 +66,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: alpha5-retest-boot-diagnostics
+          name: ubuntu26-gnome-retest-boot-diagnostics
           path: qemu-smoke/
           if-no-files-found: ignore

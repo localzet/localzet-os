@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Localzet Apps
+Name[ru]=Приложения Localzet
+Comment=Search and launch installed applications
+Exec=localzet-launcher
+Icon=applications-system
+Terminal=false
+Type=Application
+Categories=Utility;System;

@@ -1,6 +1,0 @@
-[Desktop Entry]
-Name=Localzet Desktop (Experimental)
-Comment=Localzet OS Wayland session powered by labwc
-Exec=/usr/local/bin/localzet-session
-Type=Application
-DesktopNames=Localzet

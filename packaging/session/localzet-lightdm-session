@@ -1,3 +1,0 @@
-#!/bin/sh
-# Execute the Wayland desktop entry directly, without Debian's X11 session wrapper.
-exec "$@"

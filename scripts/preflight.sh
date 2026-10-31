@@ -15,7 +15,7 @@ if [[ "$MODE" == --build ]]; then
   if [[ -z "$available_kb" ]]; then
     available_kb="$(df -Pk . | awk 'NR==2 {print $4}')"
   fi
-  if [[ -n "$available_kb" && "$available_kb" -lt 10485760 ]]; then echo 'WARNING: less than 10 GiB free for build' >&2; fi
+  if [[ -n "$available_kb" && "$available_kb" -lt 20971520 ]]; then echo 'WARNING: less than 20 GiB free for Ubuntu GNOME image build' >&2; fi
 fi
 if ((errors)); then echo "$errors missing dependencies" >&2; exit 1; fi
 echo 'Preflight passed (does not verify Rust compilation or ISO boot).'

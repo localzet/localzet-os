@@ -5,24 +5,24 @@
 ![Стадия](https://img.shields.io/badge/стадия-экспериментальная-yellow)
 ![Лицензия](https://img.shields.io/badge/лицензия-MIT-blue)
 
-**Localzet OS** — экспериментальный проект настольной операционной системы с собственными компонентами на Rust и совместимостью с экосистемой Linux.
+**Localzet OS** — экспериментальная Ubuntu 26.04 LTS система с GNOME и собственными настольными компонентами на Rust.
 
-> **Внимание:** это ранний прототип, а не готовый дистрибутив. BIOS Live ISO Alpha 3 локально загрузился в QEMU и запустил Wayland-сессию. UEFI, реальное оборудование и воспроизводимость новой сборки из GitHub пока не подтверждены.
+> **Внимание:** это ранний прототип, а не готовый дистрибутив. Предыдущий Alpha 5 ISO был Debian/Labwc и не содержал установщика. Текущая ветка переводит образ на Ubuntu 26.04 и GNOME; свежая сборка должна пройти QEMU-проверку до публикации и записи на USB.
 
 ## Цель
 
-Создать полноценную замену Ubuntu, сохранив поддержку Linux-приложений, драйверов, Docker, сети и привычных инструментов разработки. Развивать собственную оболочку, системные службы и интеграцию устройств на Rust.
+Сохранить совместимость Ubuntu с Linux-приложениями, драйверами, пакетами APT и обновлениями, добавляя собственные приложения, интеграцию и системные службы Localzet.
 
 ## Архитектура
 
 ```text
-Localzet Panel / Launcher / Desktop (Rust + GTK4)
+       Localzet Launcher / Desktop (Rust + GTK4)
                     ↓
-              labwc / Wayland
+       GNOME Shell / Mutter / Wayland
                     ↓
-       Localzet Runtime / Linux userspace
+       Localzet Runtime / Ubuntu userspace
                     ↓
-             Debian Trixie / Linux
+             Ubuntu 26.04 / Linux
 ```
 
 ## Состояние
@@ -30,23 +30,28 @@ Localzet Panel / Launcher / Desktop (Rust + GTK4)
 | Компонент | Статус |
 |---|---|
 | Исходники компонентов Rust | Экспериментальные |
-| Панель и меню приложений | Alpha 3 запускалась; новый дизайн Surface требует проверки |
-| Сборщик Live ISO | Локальный патченный legacy live-build; чистая сборка не подтверждена |
-| Загрузка в QEMU | BIOS Alpha 3 подтверждена локально |
-| NVIDIA и ноутбуки | Не проверены |
+| База системы | Ubuntu 26.04 LTS (`resolute`) |
+| Рабочая среда | GNOME Shell 50, Yaru Magenta Dark, Ubuntu Dock; локальный GNOME launcher |
+| Обновления | APT, GNOME Software, Update Manager и Snap backend из Ubuntu |
+| Установщик | Не реализован в собственном образе; не устанавливайте его на диск |
+| QEMU | Проверка новой GNOME-сборки ожидает локальную сборку и запуск |
+| NVIDIA и реальное оборудование | Требуют отдельной проверки |
 
 ## Сборка
 
-Работайте в **отдельной виртуальной машине Debian Trixie**, не на основном компьютере.
+Для сборки используйте Ubuntu 26.04 x86_64 или GitHub Actions с образом `ubuntu-26.04`. Сборщик создаёт новое дерево в `out/localzet-ubuntu-26.04` и не трогает диски с установленными системами.
 
 После добавления полного исходного дерева:
 
 ```bash
 sudo apt update
-sudo apt install live-build rsync sudo git python3 qemu-system-x86
+sudo apt install live-build debootstrap squashfs-tools xorriso rsync git sudo python3 qemu-system-x86
 ./scripts/verify-release.sh
 ./scripts/build-localzet-live.sh
-./scripts/qemu-graphical-smoke.sh out/localzet-live/localzet-os.iso out/qemu-smoke
+iso=$(find out/localzet-ubuntu-26.04 -maxdepth 1 -name '*.iso' -print -quit)
+./scripts/validate-iso.sh "$iso"
+./scripts/qemu-graphical-smoke.sh "$iso" out/qemu-smoke
+./scripts/release-gate.sh "$iso" out/qemu-smoke/boot-report.json
 ```
 
 Не записывайте экспериментальные образы на диск без проверки устройства и загрузки в виртуальной машине.
@@ -63,11 +68,11 @@ sudo apt install live-build rsync sudo git python3 qemu-system-x86
 
 Реальные скриншоты нового оформления появятся после его запуска и проверки. Макеты не выдаются за изображения работающей ОС.
 
-## Alpha 3 и Localzet Surface
+## Предыдущий Alpha 5
 
-- [Проверенные исправления и ограничения Alpha 3](docs/ALPHA3-RECOVERY.md)
-- Surface: верхняя панель с часами в центре, нижний плавающий Dock и кнопка меню. Стеклянные поверхности сейчас полупрозрачные, без гарантированного фонового размытия.
-- Новые исходники ещё не проходили CI и тест загрузки ISO.
+- [Проверенные исправления и ограничения старого Debian/Labwc образа](docs/ALPHA3-RECOVERY.md)
+- Новый образ использует GNOME Shell, а не отдельный композитор Localzet.
+- GNOME launcher и настройки темы не заменяют собой полноценный установщик или проверку оборудования.
 
 ## Лицензия
 

@@ -10,7 +10,7 @@ bash scripts/check-source-tree.sh
 python3 -m unittest discover -s tests -p 'test_*.py'
 bash scripts/verify-release.sh
 bash scripts/build-localzet-live.sh
-OUT="${LOCALZET_BUILD_DIR:-$ROOT/out/localzet-live}"
+OUT="${LOCALZET_BUILD_DIR:-$ROOT/out/localzet-ubuntu-26.04}"
 shopt -s nullglob
 images=("$OUT"/*.iso)
 (( ${#images[@]} == 1 )) || { echo 'Expected exactly one ISO' >&2; exit 3; }

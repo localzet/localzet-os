@@ -7,7 +7,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 REQUIRED = (
     "Cargo.toml", "README.md", "LICENSE", "scripts/build-localzet-live.sh",
     "scripts/release-gate.sh", "packaging/systemd/localzetd.service",
-    "packaging/session/localzet-session", "packaging/session/labwc/autostart",
+    "packaging/gnome/98-localzet.gschema.override",
 )
 CRATES = ("localzet-core", "localzetd", "localzetctl", "localzet-desktop", "localzet-panel", "localzet-launcher")
 issues = []

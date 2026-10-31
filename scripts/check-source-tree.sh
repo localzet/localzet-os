@@ -11,13 +11,10 @@ for crate in localzet-core localzetd localzetctl localzet-desktop localzet-panel
   find "crates/$crate/src" -maxdepth 1 -type f -name '*.rs' | grep -q . || { echo "MISSING Rust source: $crate" >&2; exit 1; }
 done
 for required in \
-  packaging/session/localzet-session \
-  packaging/session/localzet.desktop \
   packaging/session/guest-boot-marker \
-  packaging/session/labwc/autostart \
-  packaging/session/labwc/rc.xml \
-  packaging/session/waybar/config.jsonc \
-  packaging/session/waybar/style.css \
+  packaging/gnome/autostart/localzet-guest-boot-marker.desktop \
+  packaging/gnome/98-localzet.gschema.override \
+  packaging/applications/localzet-launcher.desktop \
   packaging/systemd/localzetd.service \
   packaging/applications/localzet-desktop.desktop \
   scripts/installer-preflight.py \

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Localzet Boot Readiness Check
+Exec=/usr/local/bin/localzet-guest-boot-marker
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

@@ -109,16 +109,8 @@ fn dock(app: &Application) {
     let start = icon_button("view-app-grid-symbolic", "Пуск", "localzet-launcher");
     start.add_css_class("start-button");
     bar.append(&start);
-    bar.append(&icon_button(
-        "system-file-manager-symbolic",
-        "Файлы",
-        "thunar",
-    ));
-    bar.append(&icon_button(
-        "utilities-terminal-symbolic",
-        "Терминал",
-        "foot",
-    ));
+    bar.append(&icon_button("org.gnome.Nautilus", "Файлы", "nautilus"));
+    bar.append(&icon_button("org.gnome.Ptyxis", "Терминал", "ptyxis"));
     bar.append(&icon_button(
         "network-wireless-symbolic",
         "Настройки сети",

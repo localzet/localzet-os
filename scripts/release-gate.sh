@@ -17,6 +17,8 @@ if data.get("qemu_booted") is not True:
     raise SystemExit("FAIL: boot not verified")
 if data.get("graphical_session_started") is not True:
     raise SystemExit("FAIL: graphical session not verified")
+if data.get("desktop_shell") != "gnome-shell":
+    raise SystemExit("FAIL: GNOME Shell session not verified")
 if data.get("screenshot_captured") is not True:
     raise SystemExit("FAIL: QEMU screenshot not captured")
 if data.get("screen_capture") != "guest-screen.ppm":

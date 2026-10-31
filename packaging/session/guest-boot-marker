@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Signal readiness when the native Localzet panel runs in a Wayland session.
+# Signal readiness only after the GNOME Wayland shell stays available.
 set -euo pipefail
-[[ -n "${WAYLAND_DISPLAY:-}" ]] || exit 1
+[[ "${XDG_SESSION_TYPE:-}" == wayland && -n "${WAYLAND_DISPLAY:-}" ]] || exit 1
 [[ -w /dev/ttyS0 ]] || exit 1
 process_running() {
     local expected="$1" proc executable
@@ -13,15 +13,15 @@ process_running() {
     done
     return 1
 }
-for _ in $(seq 1 30); do
-    if process_running localzet-panel; then
-        # A process existing for one instant does not prove a stable desktop.
-        sleep 8
-        process_running localzet-panel || continue
-        printf 'LOCALZET_GUI_SESSION_READY_V3\n' > /dev/ttyS0
+for _ in $(seq 1 60); do
+    if process_running gnome-shell; then
+        # A process existing briefly does not prove a usable GNOME session.
+        sleep 12
+        process_running gnome-shell || continue
+        printf 'LOCALZET_GUI_SESSION_READY_V4_GNOME\n' > /dev/ttyS0
         exit 0
     fi
     sleep 1
 done
-echo 'Localzet graphical panel did not start within 30 seconds' >&2
+echo 'GNOME Shell did not remain available in the Wayland session' >&2
 exit 1

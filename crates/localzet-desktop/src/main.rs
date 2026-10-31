@@ -94,8 +94,8 @@ fn main() {
         let actions = GtkBox::new(Orientation::Horizontal, 10);
         for (name, executable, args) in [
             ("Applications", "localzet-launcher", &[][..]),
-            ("Terminal", "foot", &[][..]),
-            ("Files", "thunar", &[][..]),
+            ("Терминал", "ptyxis", &[][..]),
+            ("Файлы", "nautilus", &["--new-window"][..]),
             ("Network", "nm-connection-editor", &[][..]),
             ("Audio", "pavucontrol", &[][..]),
         ] {

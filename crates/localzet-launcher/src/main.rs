@@ -5,7 +5,6 @@ use gtk::{
     gio, glib, Application, ApplicationWindow, Box as GtkBox, Button, Entry, FlowBox, Image, Label,
     Orientation, ScrolledWindow,
 };
-use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
 use std::{cell::Cell, collections::HashSet, fs, path::PathBuf, rc::Rc};
 
 fn favorites_path() -> Option<PathBuf> {
@@ -234,13 +233,8 @@ fn main() {
             .title("Localzet · Приложения")
             .default_width(520)
             .default_height(470)
+            .modal(true)
             .build();
-        window.init_layer_shell();
-        window.set_layer(Layer::Overlay);
-        window.set_anchor(Edge::Top, true);
-        window.set_margin(Edge::Top, 44);
-        window.set_keyboard_mode(KeyboardMode::Exclusive);
-        window.set_namespace("localzet-launcher");
 
         let root = GtkBox::new(Orientation::Vertical, 12);
         root.add_css_class("launcher");

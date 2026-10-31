@@ -1,4 +1,4 @@
-name: Alpha 5 ISO build and QEMU boot
+name: Ubuntu 26.04 GNOME ISO build and QEMU boot
 on:
   workflow_dispatch:
   push:
@@ -15,25 +15,22 @@ permissions:
   contents: read
 jobs:
   iso:
-    runs-on: ubuntu-24.04
-    container:
-      image: debian:trixie
-      options: --privileged
+    runs-on: ubuntu-26.04
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
       - name: Install live-build and QEMU
         run: |
-          apt-get update
-          apt-get install -y sudo git python3 ca-certificates live-build debootstrap squashfs-tools xorriso isolinux syslinux-common qemu-system-x86 rsync
-      - name: Build Alpha 5 ISO
+          sudo apt-get update
+          sudo apt-get install -y sudo git python3 ca-certificates live-build debootstrap squashfs-tools xorriso qemu-system-x86 rsync
+      - name: Build Ubuntu 26.04 GNOME ISO
         env:
           LOCALZET_BUILD_DIR: ${{ github.workspace }}/iso-build
         run: bash scripts/build-localzet-live.sh
-      - name: Boot ISO in QEMU and verify panel readiness
+      - name: Boot GNOME Wayland session in QEMU
         shell: bash
         env:
-          LOCALZET_QEMU_TIMEOUT: '360'
+          LOCALZET_QEMU_TIMEOUT: '600'
           LOCALZET_BUILD_DIR: ${{ github.workspace }}/iso-build
         run: |
           set -euo pipefail
@@ -51,7 +48,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: localzet-alpha5-iso
+          name: localzet-ubuntu-26.04-gnome-iso
           path: iso-artifact/
           retention-days: 7
           if-no-files-found: error
@@ -80,6 +77,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: alpha5-build-boot-diagnostics
+          name: ubuntu26-gnome-build-boot-diagnostics
           path: qemu-smoke/
           if-no-files-found: ignore

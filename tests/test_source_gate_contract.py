@@ -10,7 +10,8 @@ class SourceGateContract(unittest.TestCase):
         gate = (ROOT / "scripts/check-source-tree.sh").read_text()
         for item in (
             "packaging/session/guest-boot-marker",
-            "packaging/session/labwc/autostart",
+            "packaging/gnome/autostart/localzet-guest-boot-marker.desktop",
+            "packaging/gnome/98-localzet.gschema.override",
             "packaging/systemd/localzetd.service",
             "packaging/applications/localzet-desktop.desktop",
             "scripts/installer-preflight.py",
@@ -28,5 +29,5 @@ class SourceGateContract(unittest.TestCase):
 
     def test_rust_binaries_installed(self):
         build = (ROOT / "scripts/build-localzet-live.sh").read_text()
-        for name in ("localzetd", "localzetctl", "localzet-desktop", "localzet-panel", "localzet-launcher"):
+        for name in ("localzetd", "localzetctl", "localzet-desktop", "localzet-launcher"):
             self.assertIn(f"target/release/{name}", build)
